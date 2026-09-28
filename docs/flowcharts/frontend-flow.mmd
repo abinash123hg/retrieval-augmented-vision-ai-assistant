@@ -1,0 +1,35 @@
+flowchart TD
+    M[main.jsx - ReactDOM render] --> TP[ToastProvider wraps App]
+    TP --> APP[App.jsx]
+    APP -->|GET /api/health on mount| HEALTH[health state]
+    APP --> UD[useDocuments hook]
+    APP --> UC[useChat hook]
+    UD -->|GET /api/documents, poll 2.5s while waiting/processing| DOCS[documents state]
+    UC --> SS[(sessionStorage doculens.chat.messages)]
+
+    APP --> L[Layout.jsx - header + health pill]
+    L --> SB[Sidebar.jsx]
+    L --> CW[ChatWindow.jsx]
+
+    SB --> UP[UploadPanel.jsx - drag and drop, client-side checks, progress bars]
+    UP -->|onUpload -> POST /api/documents/upload with onUploadProgress| UD
+    SB --> DC[DocumentCard.jsx - name, size, pages, status badge, inline delete confirm]
+    DC --> PS[ProcessingStatus.jsx - spinner text]
+    DC -->|DELETE /api/documents/id after confirm| UD
+    SB --> SP[SummaryPanel.jsx - first ready doc]
+    SP -->|GET /api/documents/id/summary?mode=| SUM[summary card]
+
+    CW --> ES[EmptyState.jsx - when no docs and no messages]
+    CW --> CHIPS[example question chips - fill input]
+    CW --> CM[ChatMessage.jsx - user bubble / assistant card]
+    CM --> EB[evidence status badge]
+    CM --> VW[verification warnings box]
+    CM --> SC[SourceCard.jsx - doc name, page, section, excerpt, relevance %]
+    CM --> CP[copy answer button - navigator.clipboard]
+    CM --> RB[ReportButton.jsx]
+    RB -->|POST /api/reports then GET download_url as blob| DL[browser saves PDF]
+    CW --> QI[QuestionInput.jsx - textarea, Ctrl+Enter, disabled reasons]
+    QI -->|onAsk -> POST /api/chat| UC
+
+    UD -->|errors| TOAST[Toast - red/green, auto-dismiss 5s]
+    UC -->|errors| TOAST

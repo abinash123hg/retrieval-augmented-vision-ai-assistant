@@ -1,0 +1,27 @@
+flowchart TD
+    A[Document uploaded] --> B[pdf_service: page text via PyMuPDF, OCR fallback via Tesseract]
+    B --> C[chunk_service.clean_text - normalize spaces, de-hyphenate]
+    C --> D[Split page into blocks at strict headings - ALL CAPS or Title Case, max 8 words]
+    D --> E{Any block >= 40 chars?}
+    E -->|yes| F[Sections with heading as section_title]
+    E -->|no| G[Fallback: whole page text becomes one section - no content is ever dropped]
+    F --> H[_split_long: sections longer than 1600 chars split at sentence boundaries]
+    G --> H
+    H --> I[table_service tables added as content_type=table sections]
+    I --> J[embedding_service.embed_texts - batches of 16]
+    J --> K[Ollama /api/embed nomic-embed-text:latest -> 768-dim vectors]
+    K --> L[vector_store.add_sections - L2-normalize, FAISS IndexFlatIP, embeddings kept in JSON sidecar]
+    L --> M[(sections.faiss + sections_meta.json on disk)]
+
+    N[User question] --> O[embedding_service.embed_query -> question vector]
+    O --> P[vector_store.search - inner product = cosine similarity, fetch top k*5]
+    P --> Q[Filter by document_ids if given]
+    Q --> R[Drop results below MIN_RETRIEVAL_SCORE 0.35, keep top-k 8]
+    R --> S{Any section left?}
+    S -->|no| T[REFUSAL - exact sentence, model is never called]
+    S -->|yes| U[retrieval_service.build_context - numbered Source blocks, page numbers, OCR flag, max 12000 chars]
+    U --> V[ANSWER_PROMPT: rules + evidence + question -> qwen2.5:1.5b at temperature 0]
+    V --> W[Parse Answer / Evidence status]
+    W --> X[verification_service.verify: every number in answer must exist in evidence or page numbers]
+    X --> Y[citation_service.build_sources: citations only from retrieved sections - model cannot invent pages]
+    Y --> Z[Final ChatResponse with evidence_status, sources, verification warnings]

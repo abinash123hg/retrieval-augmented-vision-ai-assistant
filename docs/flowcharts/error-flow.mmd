@@ -1,0 +1,30 @@
+flowchart TD
+    A[Failure point] --> B{Which layer?}
+
+    B -->|Upload| C1[Unsupported extension -> InvalidFileError 400 with allowed-types message]
+    C1 --> C2[Empty file -> InvalidFileError 400]
+    C2 --> C3[Oversized -> FileTooLargeError 413 with MB limit]
+    C3 --> C4[Frontend UploadPanel also pre-checks type/size/empty before sending]
+
+    B -->|Extraction| D1[Corrupted/encrypted PDF -> fitz open fails -> ValueError caught in process_document -> status=failed, friendly error_message]
+    D1 --> D2[Single page fails -> ExtractedPage with error recorded, failed_pages++, other pages continue -> partially_processed]
+    D2 --> D3[Tesseract missing -> OcrError -> page marked failed; if nothing readable: status=failed with install hint]
+
+    B -->|Embedding / Index| E1[Ollama down -> OllamaUnavailableError -> process_document except-block -> status=failed, uploads preserved]
+    E1 --> E2[Dimension change -> ValueError in add_sections -> status=failed]
+
+    B -->|Retrieval| F1[Empty index or no section >= 0.35 -> retrieve returns empty list -> NO model call]
+    F1 --> F2[ChatResponse: exact refusal sentence, evidence_status=not_found, sources from closest sections NOT shown - empty list]
+
+    B -->|Generation| G1[Ollama /api/generate HTTP error -> OllamaUnavailableError 503 -> frontend error toast]
+    G1 --> G2[Model says evidence insufficient or unparseable status -> status mapped conservatively to partially_supported]
+
+    B -->|Verification| H1[Numbers in answer missing from evidence -> warning + supported downgraded to partially_supported]
+    H1 --> H2[Model reports conflict -> conflicting_sources + explicit conflict warning]
+    H2 --> H3[Evidence contains OCR sections -> OCR-quality warning attached]
+
+    B -->|Report| I1[ReportLab build fails -> ReportGenerationError 500, partial file deleted]
+    I1 --> I2[Unknown report id -> 500 with This report is no longer available]
+
+    B -->|Frontend network| J1[axios error -> errorDetail extracts backend detail else specific fallback -> red toast]
+    J1 --> J2[Backend offline on load -> health pill Backend offline]

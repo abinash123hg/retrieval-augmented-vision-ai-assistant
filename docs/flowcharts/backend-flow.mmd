@@ -1,0 +1,44 @@
+flowchart TD
+    subgraph API layer
+        R1[GET /api/health] --> H1[api/health.py]
+        R2[POST /api/documents/upload] --> H2[api/documents.py]
+        R3[GET /api/documents] --> H2
+        R4[GET /api/documents/id] --> H2
+        R5[DELETE /api/documents/id] --> H2
+        R6[GET /api/documents/id/summary] --> H2
+        R7[POST /api/chat] --> H3[api/chat.py]
+        R8[POST /api/reports] --> H4[api/reports.py]
+        R9[GET /api/reports/id/download] --> H4
+    end
+
+    H1 --> S1[ollama_service.check_ollama_connection -> GET localhost:11434/api/tags]
+
+    H2 --> S2[file_service.save_upload - validate, store, register]
+    S2 --> BG[BackgroundTasks -> file_service.process_document]
+    BG --> S3[pdf_service.extract_document]
+    S3 --> S4[ocr_service.ocr_image_bytes / ocr_image_file - Tesseract]
+    BG --> S5[table_service.extract_tables - pdfplumber]
+    BG --> S6[chunk_service.chunk_pages]
+    BG --> S7[embedding_service.embed_texts]
+    S7 --> O1[Ollama POST /api/embed - nomic-embed-text:latest]
+    BG --> S8[vector_store.add_sections]
+    S8 --> D1[(app/data/indexes/sections.faiss + sections_meta.json)]
+    S2 --> D2[(app/data/uploads/id.pdf)]
+    BG --> D3[(app/data/processed/id.json + documents.json)]
+    H2 --> S9[answer_service.summarize_document]
+    S9 --> O2[Ollama POST /api/generate - qwen2.5:1.5b]
+
+    H3 --> S10[answer_service.answer_question]
+    S10 --> S11[retrieval_service.retrieve]
+    S11 --> S7
+    S11 --> S12[vector_store.search - cosine top-k]
+    S10 --> S13[retrieval_service.build_context]
+    S10 --> O2
+    S10 --> S14[verification_service.verify]
+    S10 --> S15[citation_service.build_sources]
+
+    H4 --> S16[report_service.generate_report - ReportLab]
+    S16 --> D4[(app/data/reports/doculens-report-id.pdf)]
+    H4 --> S17[report_service.report_file -> FileResponse PDF]
+
+    ERR[AppError subclasses in core/errors.py] -.->|exception handler in main.py| JSON[JSON: detail = user-friendly message]

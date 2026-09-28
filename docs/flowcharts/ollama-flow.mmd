@@ -1,0 +1,25 @@
+flowchart TD
+    subgraph Ollama local server at http://localhost:11434
+        TAGS[GET /api/tags - list installed models]
+        EMBED[POST /api/embed - nomic-embed-text:latest]
+        GEN[POST /api/generate - qwen2.5:1.5b]
+    end
+
+    A[ollama_service.check_ollama_connection] -->|httpx GET, 5s timeout| TAGS
+    A -->|connection error| B[OllamaUnavailableError 503: start `ollama serve`]
+
+    C[ollama_service.ensure_models_available] --> TAGS
+    C -->|qwen2.5:1.5b or nomic-embed-text missing| D[OllamaModelMissingError 503: Required Ollama model is not available...]
+
+    E[embedding_service.embed_texts batches of 16] -->|model + input texts| EMBED
+    EMBED -->|embeddings: 768 floats per text| F[vector_store.add_sections]
+    G[embedding_service.embed_query] -->|single question| EMBED
+    G --> H[vector_store.search]
+
+    I[answer_service.answer_question] -->|ANSWER_PROMPT with evidence, temperature 0, top_p 0.1, num_predict 1024, stream false| GEN
+    J[answer_service.summarize_document] -->|SUMMARY_PROMPT| GEN
+    GEN -->|response text| K[_parse_response: Answer + Evidence status]
+
+    L[Frontend GET /api/health on load] --> M[Layout health pill: Ollama connected / unavailable / Backend offline]
+
+    N[Ollama stopped while app runs] --> O[chat returns 503, toast shows message, uploaded documents stay intact]
