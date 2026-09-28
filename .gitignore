@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# Environment
+.env
+backend/.env
+
+# Node
+node_modules/
+frontend/dist/
+.vite/
+
+# Local data (uploads, processed content, indexes, reports)
+backend/app/data/uploads/*
+backend/app/data/processed/*
+backend/app/data/indexes/*
+backend/app/data/reports/*
+!backend/app/data/uploads/.gitkeep
+!backend/app/data/processed/.gitkeep
+!backend/app/data/indexes/.gitkeep
+!backend/app/data/reports/.gitkeep
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

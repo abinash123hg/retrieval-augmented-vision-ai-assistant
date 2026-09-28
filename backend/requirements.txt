@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+pydantic-settings
+python-dotenv
+httpx
+pymupdf
+pdfplumber
+pillow
+pytesseract
+faiss-cpu
+numpy
+reportlab
+pytest
+pytest-asyncio
