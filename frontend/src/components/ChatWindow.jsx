@@ -14,17 +14,26 @@ const ANSWERABLE_STATUSES = new Set(['ready', 'partially_processed']);
 
 export default function ChatWindow({ documents, messages, loading, onAsk }) {
   const [question, setQuestion] = useState('');
+  const [selectedDocId, setSelectedDocId] = useState('');
   const bottomRef = useRef(null);
-  const hasReadyDocument = documents.some((d) => ANSWERABLE_STATUSES.has(d.processing_status));
+  const answerable = documents.filter((d) => ANSWERABLE_STATUSES.has(d.processing_status));
+  const hasReadyDocument = answerable.length > 0;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  // Drop the selection if the chosen document was deleted or is no longer answerable.
+  useEffect(() => {
+    if (selectedDocId && !answerable.some((d) => d.id === selectedDocId)) {
+      setSelectedDocId('');
+    }
+  }, [answerable, selectedDocId]);
+
   const submit = (text) => {
     const trimmed = text.trim();
     if (!trimmed || loading || !hasReadyDocument) return;
-    onAsk(trimmed);
+    onAsk(trimmed, selectedDocId ? [selectedDocId] : []);
     setQuestion('');
   };
 
@@ -61,6 +70,27 @@ export default function ChatWindow({ documents, messages, loading, onAsk }) {
         )}
         <div ref={bottomRef} />
       </div>
+      {hasReadyDocument && (
+        <div className="doc-scope">
+          <label className="doc-scope-label" htmlFor="doc-scope-select">
+            Ask about:
+          </label>
+          <select
+            id="doc-scope-select"
+            className="doc-scope-select"
+            value={selectedDocId}
+            onChange={(e) => setSelectedDocId(e.target.value)}
+            disabled={loading}
+          >
+            <option value="">All documents</option>
+            {answerable.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.file_name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <QuestionInput
         value={question}
         onChange={setQuestion}

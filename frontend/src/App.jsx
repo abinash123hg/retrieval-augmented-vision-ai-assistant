@@ -38,9 +38,10 @@ export default function App() {
     }
   };
 
-  const handleAsk = (question) => {
-    // empty document_ids = search across all documents
-    chat.ask(question, []);
+  const handleAsk = (question, documentIds = []) => {
+    // empty document_ids = search across all documents; the chat selector can
+    // scope a question to a single document for isolation.
+    chat.ask(question, documentIds);
   };
 
   return (

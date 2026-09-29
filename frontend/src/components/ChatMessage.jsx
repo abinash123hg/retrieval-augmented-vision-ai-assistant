@@ -1,16 +1,10 @@
 import { useState } from 'react';
-import { AlertTriangle, Check, Copy, ShieldCheck } from 'lucide-react';
+import { Check, Copy } from 'lucide-react';
 import SourceCard from './SourceCard';
 import ReportButton from './ReportButton';
 import { useToast } from './Toast';
 
-const EVIDENCE_META = {
-  supported: { label: 'Supported', cls: 'ok' },
-  partially_supported: { label: 'Partially supported', cls: 'warn' },
-  not_found: { label: 'Not found', cls: 'bad' },
-  conflicting_sources: { label: 'Conflicting sources', cls: 'warn' },
-  low_quality_source: { label: 'Low-quality source', cls: 'warn' },
-};
+const MAX_SOURCES = 2;
 
 export default function ChatMessage({ message }) {
   const [copied, setCopied] = useState(false);
@@ -24,8 +18,7 @@ export default function ChatMessage({ message }) {
     );
   }
 
-  const evidence = EVIDENCE_META[message.evidenceStatus];
-  const warnings = message.verification?.warnings || [];
+  const sources = (message.sources || []).slice(0, MAX_SOURCES);
 
   const copyAnswer = async () => {
     try {
@@ -42,12 +35,6 @@ export default function ChatMessage({ message }) {
       <div className="chat-msg">
         <p className="answer-text">{message.text}</p>
         <div className="chat-msg-footer">
-          {evidence && (
-            <span className={`evidence-badge evidence-${evidence.cls}`}>
-              <ShieldCheck size={13} aria-hidden="true" />
-              {evidence.label}
-            </span>
-          )}
           <button
             type="button"
             className="btn btn-quiet copy-btn"
@@ -61,25 +48,13 @@ export default function ChatMessage({ message }) {
             question={message.question}
             answer={message.text}
             evidenceStatus={message.evidenceStatus}
-            sources={message.sources}
+            sources={sources}
           />
         </div>
-        {warnings.length > 0 && (
-          <div className="verification-box" role="note">
-            <p className="verification-title">
-              <AlertTriangle size={14} aria-hidden="true" /> Verification warnings
-            </p>
-            <ul>
-              {warnings.map((w) => (
-                <li key={w}>{w}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {message.sources.length > 0 && (
+        {sources.length > 0 && (
           <div className="sources-block">
             <h3 className="sources-heading">Sources used for this answer</h3>
-            {message.sources.map((s, i) => (
+            {sources.map((s, i) => (
               <SourceCard key={`${s.document_name}-${s.page_number}-${i}`} source={s} />
             ))}
           </div>

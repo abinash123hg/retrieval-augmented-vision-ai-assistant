@@ -70,7 +70,7 @@ def create_embeddings(texts: list[str]) -> list[list[float]]:
         ) from exc
 
 
-def generate_answer(prompt: str) -> str:
+def generate_answer(prompt: str, system: str | None = None) -> str:
     settings = get_settings()
     payload = {
         "model": settings.ollama_chat_model,
@@ -79,6 +79,8 @@ def generate_answer(prompt: str) -> str:
         # Deterministic settings: grounded answers must not drift.
         "options": {"temperature": 0.0, "top_p": 0.1, "num_predict": 1024},
     }
+    if system:
+        payload["system"] = system
     try:
         response = httpx.post(
             f"{settings.ollama_base_url}/api/generate", json=payload, timeout=TIMEOUT_GENERATE

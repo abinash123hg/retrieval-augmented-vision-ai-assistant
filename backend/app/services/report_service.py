@@ -23,14 +23,6 @@ from ..models.schemas import ReportRequest
 
 logger = get_logger(__name__)
 
-EVIDENCE_LABELS = {
-    "supported": "Supported",
-    "partially_supported": "Partially supported",
-    "not_found": "Not found",
-    "conflicting_sources": "Conflicting sources",
-    "low_quality_source": "Low-quality source",
-}
-
 
 def _escape(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
@@ -64,10 +56,6 @@ def generate_report(request: ReportRequest) -> tuple[str, str, Path]:
             Paragraph(_escape(request.question), body_style),
             Paragraph("Answer", heading_style),
             Paragraph(_escape(request.answer).replace("\n", "<br/>"), body_style),
-            Paragraph(
-                f"Evidence status: {EVIDENCE_LABELS.get(request.evidence_status, request.evidence_status)}",
-                meta_style,
-            ),
             Paragraph("Sources used for this answer", heading_style),
         ]
         if request.sources:

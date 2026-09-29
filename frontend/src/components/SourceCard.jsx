@@ -3,10 +3,6 @@ import { ChevronDown, ChevronUp, FileText } from 'lucide-react';
 
 export default function SourceCard({ source }) {
   const [expanded, setExpanded] = useState(false);
-  const scorePct =
-    source.score != null && !Number.isNaN(source.score)
-      ? `${Math.round(source.score * 100)}%`
-      : null;
 
   return (
     <article className="source-card">
@@ -16,11 +12,6 @@ export default function SourceCard({ source }) {
           {source.document_name}
         </span>
         <span className="source-page">Page {source.page_number}</span>
-        {scorePct && (
-          <span className="source-score" title="Relevance score">
-            {scorePct} relevant
-          </span>
-        )}
       </div>
       {source.section && <p className="source-section">{source.section}</p>}
       <p

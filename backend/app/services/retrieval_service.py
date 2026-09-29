@@ -30,20 +30,29 @@ def retrieve(
 
 
 def build_context(sections: list[dict], max_characters: int | None = None) -> str:
-    """Format retrieved sections as numbered evidence blocks within a character budget."""
+    """Format retrieved sections as numbered evidence blocks within a character budget.
+
+    Duplicate content (e.g. a table chunk that repeats page text) is included once.
+    """
     settings = get_settings()
     max_characters = max_characters or settings.max_context_characters
     blocks: list[str] = []
     used = 0
-    for i, section in enumerate(sections, start=1):
+    seen_content: set[str] = set()
+    for section in sections:
+        content = section["content"].strip()
+        content_key = " ".join(content.lower().split())
+        if content_key in seen_content:
+            continue
+        seen_content.add(content_key)
         header = (
-            f"[Source {i}] {section['document_name']} — page {section['page_number']}"
+            f"[Source {len(blocks) + 1}] {section['document_name']} — page {section['page_number']}"
         )
         if section.get("section_title"):
             header += f" — {section['section_title']}"
         if section.get("content_type") == "ocr":
             header += " (OCR-derived text)"
-        block = f"{header}\n{section['content']}"
+        block = f"{header}\n{content}"
         if used + len(block) > max_characters and blocks:
             break
         blocks.append(block)

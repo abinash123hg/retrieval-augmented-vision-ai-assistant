@@ -61,7 +61,8 @@ export default function useChat() {
           question,
           text: data.answer,
           evidenceStatus: data.evidence_status,
-          sources: data.sources || [],
+          // Defensive limit: never keep more than two sources even if the backend sends more.
+          sources: (data.sources || []).slice(0, 2),
           verification: data.verification || null,
           createdAt: data.created_at || new Date().toISOString(),
         });

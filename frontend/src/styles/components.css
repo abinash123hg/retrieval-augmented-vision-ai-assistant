@@ -531,61 +531,34 @@
   font-size: 12px;
 }
 
-/* ---- Evidence badge ---- */
+/* ---- Document scope selector ---- */
 
-.evidence-badge {
-  display: inline-flex;
+.doc-scope {
+  display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.doc-scope-label {
   font-size: 12px;
   font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 999px;
-  border: 1px solid transparent;
+  color: var(--muted);
+  white-space: nowrap;
 }
 
-.evidence-ok {
-  color: var(--success);
-  background: var(--success-bg);
-  border-color: #BBF7D0;
-}
-
-.evidence-warn {
-  color: var(--warning);
-  background: var(--warning-bg);
-  border-color: #FDE68A;
-}
-
-.evidence-bad {
-  color: var(--error);
-  background: var(--error-bg);
-  border-color: #FECACA;
-}
-
-/* ---- Verification warnings ---- */
-
-.verification-box {
-  background: var(--warning-bg);
-  border: 1px solid #FDE68A;
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
+.doc-scope-select {
+  flex: 0 1 260px;
   font-size: 13px;
-  color: #92400E;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
 }
 
-.verification-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-}
-
-.verification-box ul {
-  padding-left: 22px;
-  list-style: disc;
+.doc-scope-select:disabled {
+  opacity: 0.6;
 }
 
 /* ---- Sources ---- */
@@ -633,12 +606,6 @@
 .source-page {
   font-size: 12px;
   color: var(--muted);
-}
-
-.source-score {
-  font-size: 12px;
-  color: var(--muted);
-  margin-left: auto;
 }
 
 .source-section {

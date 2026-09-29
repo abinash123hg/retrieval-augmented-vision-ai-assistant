@@ -1,9 +1,10 @@
 """Verification of draft answers against retrieved evidence.
 
-Rules enforced here (from docs/Rules.md):
-- Refusal is detected and reported as not_found.
-- Numbers in the answer must appear in the evidence.
-- Model-reported conflicts are surfaced, never silently resolved.
+Lightweight grounding validator (safest behavior: uncertain evidence -> refusal):
+- A refusal from the model is reported as not_found.
+- Every multi-digit number in the answer must appear in the evidence text or
+  match a cited page number; otherwise the answer is rejected (not_found) so
+  the caller replaces it with the exact refusal sentence.
 """
 
 import re
@@ -14,17 +15,6 @@ REFUSAL_SENTENCE = (
 _REFUSAL_MARKER = "could not find enough information"
 
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?%?")
-
-STATUS_MAP = {
-    "supported": "supported",
-    "partially supported": "partially_supported",
-    "partially-supported": "partially_supported",
-    "not found": "not_found",
-    "conflicting sources": "conflicting_sources",
-    "conflicting": "conflicting_sources",
-    "low-quality source": "low_quality_source",
-    "low quality source": "low_quality_source",
-}
 
 
 def normalize_number(token: str) -> str:
@@ -39,44 +29,36 @@ def _numbers_in(text: str) -> set[str]:
     return {normalize_number(m) for m in _NUMBER.findall(text)}
 
 
-def map_evidence_status(raw: str) -> str:
-    key = raw.strip().lower().rstrip(".")
-    return STATUS_MAP.get(key, "partially_supported")
+def verify(answer: str, sections: list[dict]) -> tuple[str, bool, list[str]]:
+    """Return (evidence_status, passed, warnings).
 
-
-def verify(answer: str, model_status: str, sections: list[dict]) -> tuple[str, bool, list[str]]:
-    """Return (evidence_status, passed, warnings)."""
+    'not_found' means the draft answer must be replaced with the refusal
+    sentence — either the model refused, or it produced claims that are not
+    grounded in the retrieved evidence.
+    """
     warnings: list[str] = []
 
-    if is_refusal(answer):
+    if not answer.strip() or is_refusal(answer):
         return "not_found", True, warnings
 
-    status = map_evidence_status(model_status)
-    evidence_text = " ".join(s.get("content", "") for s in sections)
-    evidence_numbers = _numbers_in(evidence_text)
-    answer_numbers = _numbers_in(answer)
-
-    # Page numbers cited in the answer are allowed to come from source metadata.
-    allowed = set(evidence_numbers)
+    evidence_text = " ".join(
+        " ".join(filter(None, [s.get("content", ""), s.get("section_title") or ""]))
+        for s in sections
+    )
+    allowed = _numbers_in(evidence_text)
     for section in sections:
         allowed.add(str(section.get("page_number", "")))
 
+    answer_numbers = _numbers_in(answer)
     unsupported = {n for n in answer_numbers if n not in allowed and len(n) > 1}
     if unsupported:
         sample = ", ".join(sorted(unsupported)[:5])
         warnings.append(
-            f"These values in the draft answer were not found in the retrieved evidence: {sample}."
+            f"Draft answer rejected: values not found in the retrieved evidence: {sample}."
         )
-        if status == "supported":
-            status = "partially_supported"
+        return "not_found", True, warnings
 
-    if status == "conflicting_sources":
-        warnings.append(
-            "The documents contain conflicting values for this question. Both are reported."
-        )
+    if any(s.get("content_type") == "ocr" for s in sections):
+        warnings.append("Part of the evidence comes from OCR of a scanned page.")
 
-    if any(s.get("content_type") == "ocr" for s in sections) and status == "supported":
-        warnings.append("Part of the evidence comes from OCR of a scanned page; values may contain recognition errors.")
-
-    passed = status in {"supported", "partially_supported", "conflicting_sources", "low_quality_source"}
-    return status, passed, warnings
+    return "supported", True, warnings
