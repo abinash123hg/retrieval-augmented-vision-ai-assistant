@@ -2,66 +2,64 @@
 
 DocuLens is a local document reading and question-answering application.
 
-Upload PDFs or images, ask questions in normal language, and get grounded answers with page-level citations. If the answer is not in your documents, DocuLens says so instead of guessing.
+Upload PDFs or images to ask questions in natural language and get grounded answers with page-level citations. If the answer is not supported by your documents, DocuLens will tell you instead of guessing.
+## Overview
+DocuLens is a document question-answering system. PDFs and images can be uploaded and processed to extract text, which can then be queried to produce natural-sounding answers with page-level citations of the source information. If a query cannot be answered with the documents provided, the model will refuse to guess.
+The following functionality is implemented:
 
-## Main Features
-
-- PDF and image upload (PDF, PNG, JPG).
-- Text extraction with page numbers.
-- OCR for scanned pages (Tesseract).
-- Basic table extraction.
-- Local document search (FAISS + Ollama embeddings).
-- Ollama-based grounded answer generation.
-- Page-level citations and evidence verification.
-- Refusal when evidence is insufficient.
-- Multi-document comparison.
-- Downloadable reports.
+- PDF and image upload (PDF, PNG, JPG)
+- Text extraction with page numbers
+- OCR for scanned pages (Tesseract)
+- Simple table extraction
+- Local document search (FAISS + Ollama embeddings)
+- Ollama-based grounded answer generation
+- Page-level citations and evidence verification
+- Refusal to answer when evidence is lacking
+- Multi-document comparisons
+- Report downloads
 
 ## Requirements
 
-- Python 3.11 or newer.
-- Node.js 20 or newer.
-- Ollama running locally.
-- Models: `qwen2.5:1.5b` and `nomic-embed-text:latest`.
+- Python 3.11 or newer
+- Node.js 20 or newer
+- Ollama running locally
+- Models: `qwen2.5:1.5b` and `nomic-embed-text:latest`
 - Tesseract OCR (for scanned documents): https://github.com/UB-Mannheim/tesseract/wiki
 
-## Start Ollama
+To start Ollama:
 
 ```bash
 ollama serve
 ```
 
-Pull the models (once):
+Then, pull the models (only once):
 
 ```bash
 ollama pull qwen2.5:1.5b
 ollama pull nomic-embed-text:latest
 ```
 
-Check models:
+You can check the list of available models with:
 
 ```bash
 ollama list
 ```
 
-## Start Backend
+To start the backend:
 
 ```bash
 cd backend
 python -m venv .venv
-.venv\Scripts\activate        # Windows
-# source .venv/bin/activate   # macOS/Linux
+.venv\Scripts\activate    # Windows
+# source .venv/bin/activate  # macOS/Linux
 pip install -r requirements.txt
-copy .env.example .env        # Windows (cp on macOS/Linux)
+copy .env.example .env    # Windows (cp on macOS/Linux)
 uvicorn app.main:app --reload --port 8000
 ```
 
-Backend API: http://127.0.0.1:8000
-API documentation: http://127.0.0.1:8000/docs
+The backend API is available at http://127.0.0.1:8000, with documentation at http://127.0.0.1:8000/docs.
 
-## Start Frontend
-
-Open another terminal:
+To start the frontend:
 
 ```bash
 cd frontend
@@ -69,9 +67,9 @@ npm install
 npm run dev
 ```
 
-The frontend runs at http://localhost:5173 and talks to the backend at http://127.0.0.1:8000.
+The frontend will be available at http://localhost:5173 and will connect to the backend at http://127.0.0.1:8000.
 
-## Run Tests
+To run tests:
 
 ```bash
 cd backend
@@ -79,25 +77,18 @@ cd backend
 pytest
 ```
 
-## Sample Documents
+The `samples/` directory contains a `sample_report.pdf` (native text PDF) and `sample_invoice.png` (image requiring OCR) that can be used for quick testing.
+The following documents are available in the `docs/` directory:
 
-`samples/` contains `sample_report.pdf` (native text PDF) and `sample_invoice.png` (image requiring OCR) for quick testing.
+- `PRD.md`: Product Requirements Document
+- `Architecture.md`: System architecture and data flow
+- `Rules.md`: Project, answer, and safety rules
+- `Phases.md`: Development phases
+- `Design.md`: UI design specification
+- `Memory.md`: Current project status
 
-## Project Documentation
+An important rule for the application is that it should never guess. If an answer is not supported by an uploaded document, it should clearly state:
 
-See `docs/`:
+"I could not find enough information in the uploaded documents to answer this confidently."
 
-- `PRD.md` — product requirements.
-- `Architecture.md` — system design and data flow.
-- `Rules.md` — project, answer and safety rules.
-- `Phases.md` — development phases.
-- `Design.md` — UI design specification.
-- `Memory.md` — current project status.
-
-## Important Accuracy Rule
-
-The application must not guess. If an answer is not supported by an uploaded document, it must clearly say:
-
-> "I could not find enough information in the uploaded documents to answer this confidently."
-
-Every answer shows the document name and page number of the evidence used, and draft answers are verified against the retrieved sections before being shown.
+Every answer also displays the document name and page number of the evidence used, and draft answers are verified against the retrieved sections before being shown.
