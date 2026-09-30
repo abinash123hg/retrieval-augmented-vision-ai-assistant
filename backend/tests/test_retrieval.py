@@ -92,3 +92,49 @@ def test_remove_document_clears_its_sections(monkeypatch):
     _seed()
     vector_store.remove_document("doc1")
     assert retrieval_service.retrieve("revenue", min_score=0.1) == []
+
+
+def test_reranker_promotes_discriminative_term_over_high_dense_score():
+    """Second stage must outrank name-heavy chunks that dense similarity favored.
+
+    Mirrors the real failure: the person's name appears in MANY chunks (low IDF),
+    while the discriminative term 'university' appears in one fact-bearing chunk
+    (high IDF) that dense cosine ranked below the name-heavy contact/summary chunks.
+    A real reranker promotes the fact-bearing chunk.
+    """
+    question = "Which university is Abinash Swain studying at?"
+    sections = [
+        {"content": "Abinash Swain Email Location Bhubaneswar Odisha India", "score": 0.73, "page_number": 11},
+        {"content": "Abinash Swain is a motivated student and AI developer", "score": 0.70, "page_number": 10},
+        {"content": "Abinash Swain GitHub LinkedIn ORCID profile links", "score": 0.67, "page_number": 11},
+        {"content": "Abinash Swain professional highlights and summary", "score": 0.65, "page_number": 1},
+        {"content": "Abinash Swain career objectives and future direction", "score": 0.64, "page_number": 10},
+        {"content": "Centurion University of Technology and Management CUTM", "score": 0.58, "page_number": 2},
+    ]
+    reranked = retrieval_service._rerank(question, sections)
+    assert reranked[0]["page_number"] == 2
+    # the original dense score is preserved on the section (only order changes)
+    assert reranked[0]["score"] == 0.58
+
+
+def test_reranker_keeps_dense_order_without_lexical_signal():
+    """No shared query terms -> fall back to the dense ordering (no spurious reshuffle)."""
+    sections = [
+        {"content": "alpha beta", "score": 0.9, "page_number": 1},
+        {"content": "gamma delta", "score": 0.5, "page_number": 2},
+    ]
+    reranked = retrieval_service._rerank("zzz qqq", sections)
+    assert [s["page_number"] for s in reranked] == [1, 2]
+
+
+
+def test_retrieve_reranks_between_search_and_context(monkeypatch):
+    """Full path Query -> FAISS -> rerank -> context keeps the relevant page first."""
+    monkeypatch.setattr(retrieval_service.embedding_service, "embed_query", fake_embed)
+    _seed()
+    results = retrieval_service.retrieve("What was the total revenue?", min_score=0.3)
+    assert results
+    assert "revenue" in results[0]["content"].lower()
+    context = retrieval_service.build_context(results)
+    assert "[Source 1]" in context
+

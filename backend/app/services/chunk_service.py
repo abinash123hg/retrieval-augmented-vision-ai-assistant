@@ -6,9 +6,11 @@ content type (text | table | ocr).
 
 import re
 import uuid
+from math import ceil
 
 MAX_SECTION_CHARS = 1600
 MIN_SECTION_CHARS = 40
+_PAGE_NUMBER_LINE = re.compile(r"^\s*page\s*\d+\s*$", re.IGNORECASE)
 
 
 def clean_text(text: str) -> str:
@@ -17,6 +19,46 @@ def clean_text(text: str) -> str:
     text = re.sub(r"\n{3,}", "\n\n", text)
     text = re.sub(r"-\n(?=[a-z])", "", text)  # de-hyphenate line breaks
     return text.strip()
+
+
+def _normalize_line(line: str) -> str:
+    """Collapse a line for boilerplate comparison (drop page numbers/case/space)."""
+    s = " ".join(line.split()).strip().lower()
+    s = re.sub(r"\bpage\s*\d+\b", " ", s)
+    return " ".join(s.split()).strip()
+
+
+def _detect_boilerplate_lines(page_texts: list[str]) -> set[str]:
+    """Find running header/footer lines repeated across most pages.
+
+    These near-duplicate chunks carry no per-page information yet match name-based
+    queries strongly, crowding real content out of the top-k. Only short lines that
+    appear on at least half the pages (and on 3+ pages) are treated as boilerplate,
+    so genuine content is never stripped.
+    """
+    n = len(page_texts)
+    if n < 3:
+        return set()
+    threshold = max(3, ceil(n * 0.5))
+    counts: dict[str, int] = {}
+    for text in page_texts:
+        seen: set[str] = set()
+        for line in text.split("\n"):
+            norm = _normalize_line(line)
+            if len(norm) < 3 or len(norm) > 80 or norm in seen:
+                continue
+            seen.add(norm)
+            counts[norm] = counts.get(norm, 0) + 1
+    return {norm for norm, c in counts.items() if c >= threshold}
+
+
+def _strip_boilerplate(text: str, boilerplate: set[str]) -> str:
+    kept = [
+        line
+        for line in text.split("\n")
+        if not _PAGE_NUMBER_LINE.match(line) and _normalize_line(line) not in boilerplate
+    ]
+    return "\n".join(kept)
 
 
 def _looks_like_heading(line: str) -> bool:
@@ -68,8 +110,11 @@ def chunk_pages(
     """Build searchable sections from page dicts {'page_number', 'text', 'ocr_used'}."""
     sections: list[dict] = []
 
-    for page in pages:
-        text = clean_text(page.get("text", ""))
+    cleaned_pages = [clean_text(page.get("text", "")) for page in pages]
+    boilerplate = _detect_boilerplate_lines(cleaned_pages)
+
+    for page, text in zip(pages, cleaned_pages):
+        text = clean_text(_strip_boilerplate(text, boilerplate))
         if len(text) < MIN_SECTION_CHARS:
             continue
         page_number = page["page_number"]

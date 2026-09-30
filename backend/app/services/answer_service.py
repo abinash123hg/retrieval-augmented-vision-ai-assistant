@@ -112,7 +112,7 @@ def answer_question(question: str, document_ids: list[str] | None = None) -> Cha
             logger.info("Answer rejected by grounding validation; returning refusal.")
         answer = verification_service.REFUSAL_SENTENCE
     else:
-        sources = citation_service.build_sources(sections)
+        sources = citation_service.build_sources(sections, answer=answer)
 
     return ChatResponse(
         answer=answer,

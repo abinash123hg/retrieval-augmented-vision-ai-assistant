@@ -12,9 +12,15 @@ const EXAMPLE_QUESTIONS = [
 
 const ANSWERABLE_STATUSES = new Set(['ready', 'partially_processed']);
 
-export default function ChatWindow({ documents, messages, loading, onAsk }) {
+export default function ChatWindow({
+  documents,
+  messages,
+  loading,
+  selectedDocId,
+  onSelectDocument,
+  onAsk,
+}) {
   const [question, setQuestion] = useState('');
-  const [selectedDocId, setSelectedDocId] = useState('');
   const bottomRef = useRef(null);
   const answerable = documents.filter((d) => ANSWERABLE_STATUSES.has(d.processing_status));
   const hasReadyDocument = answerable.length > 0;
@@ -26,14 +32,14 @@ export default function ChatWindow({ documents, messages, loading, onAsk }) {
   // Drop the selection if the chosen document was deleted or is no longer answerable.
   useEffect(() => {
     if (selectedDocId && !answerable.some((d) => d.id === selectedDocId)) {
-      setSelectedDocId('');
+      onSelectDocument('');
     }
-  }, [answerable, selectedDocId]);
+  }, [answerable, selectedDocId, onSelectDocument]);
 
   const submit = (text) => {
     const trimmed = text.trim();
     if (!trimmed || loading || !hasReadyDocument) return;
-    onAsk(trimmed, selectedDocId ? [selectedDocId] : []);
+    onAsk(trimmed);
     setQuestion('');
   };
 
@@ -79,7 +85,7 @@ export default function ChatWindow({ documents, messages, loading, onAsk }) {
             id="doc-scope-select"
             className="doc-scope-select"
             value={selectedDocId}
-            onChange={(e) => setSelectedDocId(e.target.value)}
+            onChange={(e) => onSelectDocument(e.target.value)}
             disabled={loading}
           >
             <option value="">All documents</option>

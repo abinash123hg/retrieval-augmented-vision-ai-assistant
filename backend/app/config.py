@@ -24,7 +24,12 @@ class Settings(BaseSettings):
     # Verified against real nomic-embed-text cosine scores on this corpus:
     # relevant chunks measured 0.50-0.77, cross-document noise 0.32-0.49.
     # 0.68 was rejected empirically — it would turn basic facts into "not found".
-    top_k_results: int = 4
+    # top_k=6 (not 4): after running header/footer boilerplate is dropped at chunk
+    # time, a genuinely relevant chunk can sit at rank ~5 while still scoring well
+    # above min_retrieval_score. The score gate keeps precision; k=6 gives enough
+    # depth to reach it. Verified: a page-2 EDUCATION fact (score 0.60) was missed
+    # at k=4 and correctly retrieved at k=6.
+    top_k_results: int = 6
     min_retrieval_score: float = 0.5
     max_context_characters: int = 12000
     max_sources: int = 2

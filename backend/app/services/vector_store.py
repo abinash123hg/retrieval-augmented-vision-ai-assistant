@@ -83,7 +83,10 @@ def search(
         if _index is None or _index.ntotal == 0 or not _meta:
             return []
         vector = _normalize(np.array([query_embedding], dtype="float32"))
-        fetch = min(_index.ntotal, max(k * 5, k))
+        # When scoping to specific documents we must scan the whole index, otherwise
+        # the k*5 pre-filter can be filled entirely by other documents and starve the
+        # scoped result set. Unscoped searches keep the cheaper k*5 candidate window.
+        fetch = _index.ntotal if document_ids else min(_index.ntotal, max(k * 5, k))
         scores, ids = _index.search(vector, fetch)
         results: list[tuple[dict, float]] = []
         for score, idx in zip(scores[0], ids[0]):
