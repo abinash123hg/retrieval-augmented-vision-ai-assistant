@@ -97,24 +97,25 @@ def test_remove_document_clears_its_sections(monkeypatch):
 def test_reranker_promotes_discriminative_term_over_high_dense_score():
     """Second stage must outrank name-heavy chunks that dense similarity favored.
 
-    Mirrors the real failure: the person's name appears in MANY chunks (low IDF),
-    while the discriminative term 'university' appears in one fact-bearing chunk
-    (high IDF) that dense cosine ranked below the name-heavy contact/summary chunks.
-    A real reranker promotes the fact-bearing chunk.
+    Mirrors the real failure with synthetic data: a repeated name appears in MANY
+    chunks (low IDF), while the discriminative term 'university' appears in one
+    fact-bearing chunk (high IDF) that dense cosine ranked below the name-heavy
+    contact/summary chunks. A real reranker promotes the fact-bearing chunk.
     """
-    question = "Which university is Abinash Swain studying at?"
+    question = "Which university is Jordan Lee studying at?"
     sections = [
-        {"content": "Abinash Swain Email Location Bhubaneswar Odisha India", "score": 0.73, "page_number": 11},
-        {"content": "Abinash Swain is a motivated student and AI developer", "score": 0.70, "page_number": 10},
-        {"content": "Abinash Swain GitHub LinkedIn ORCID profile links", "score": 0.67, "page_number": 11},
-        {"content": "Abinash Swain professional highlights and summary", "score": 0.65, "page_number": 1},
-        {"content": "Abinash Swain career objectives and future direction", "score": 0.64, "page_number": 10},
-        {"content": "Centurion University of Technology and Management CUTM", "score": 0.58, "page_number": 2},
+        {"content": "Jordan Lee Email Location Springfield", "score": 0.73, "page_number": 11},
+        {"content": "Jordan Lee is a motivated student and developer", "score": 0.70, "page_number": 10},
+        {"content": "Jordan Lee GitHub LinkedIn profile links", "score": 0.67, "page_number": 11},
+        {"content": "Jordan Lee professional highlights and summary", "score": 0.65, "page_number": 1},
+        {"content": "Jordan Lee career objectives and future direction", "score": 0.64, "page_number": 10},
+        {"content": "Northfield University of Science and Technology", "score": 0.58, "page_number": 2},
     ]
     reranked = retrieval_service._rerank(question, sections)
     assert reranked[0]["page_number"] == 2
     # the original dense score is preserved on the section (only order changes)
     assert reranked[0]["score"] == 0.58
+
 
 
 def test_reranker_keeps_dense_order_without_lexical_signal():
