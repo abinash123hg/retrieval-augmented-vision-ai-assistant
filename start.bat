@@ -11,7 +11,8 @@ if errorlevel 1 (
     start "Ollama" cmd /k "ollama serve"
     timeout /t 5 /nobreak >nul
 ) else (
-    echo       Ollama is running.
+    echo       Ollama is already running in the background ^(system tray^).
+    echo       No separate Ollama terminal is needed - that is expected.
 )
 
 echo [2/3] Starting backend on http://127.0.0.1:8000 ...
