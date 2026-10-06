@@ -25,6 +25,9 @@ backend/app/data/reports/*
 !backend/app/data/indexes/.gitkeep
 !backend/app/data/reports/.gitkeep
 
+# Evaluation runtime store (isolated index/uploads created by evaluate.py)
+evaluation/.evaldata/
+
 # IDE / OS
 .vscode/
 .idea/
