@@ -20,7 +20,7 @@ Use:
 - Pillow for image handling.
 - Tesseract (pytesseract) for scanned text.
 - Ollama `nomic-embed-text:latest` for embeddings (`/api/embed`).
-- Ollama `qwen2.5:1.5b` for answer generation (`/api/generate`).
+- Ollama `qwen2.5:3b` for answer generation (`/api/generate`).
 - FAISS (faiss-cpu) for local vector search.
 - ReportLab for downloadable reports.
 - pytest for tests.
@@ -36,7 +36,7 @@ Avoid adding:
 - Multiple databases without a clear reason.
 - Large frameworks that do not help the first version.
 
-Model rule: do not replace `qwen2.5:1.5b` or `nomic-embed-text:latest` unless there is a clear technical reason and the user approves it. Never silently switch to another model.
+Model rule: do not replace `qwen2.5:3b` or `nomic-embed-text:latest` unless there is a clear technical reason and the user approves it. Never silently switch to another model.
 
 ## 3. Document Rules
 

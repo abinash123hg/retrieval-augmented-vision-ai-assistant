@@ -20,7 +20,7 @@ flowchart TD
     R --> S{Any section left?}
     S -->|no| T[REFUSAL - exact sentence, model is never called]
     S -->|yes| U[retrieval_service.build_context - numbered Source blocks, page numbers, OCR flag, max 12000 chars]
-    U --> V[ANSWER_PROMPT: rules + evidence + question -> qwen2.5:1.5b at temperature 0]
+    U --> V[ANSWER_PROMPT: rules + evidence + question -> qwen2.5:3b at temperature 0]
     V --> W[Parse Answer / Evidence status]
     W --> X[verification_service.verify: every number in answer must exist in evidence or page numbers]
     X --> Y[citation_service.build_sources: citations only from retrieved sections - model cannot invent pages]

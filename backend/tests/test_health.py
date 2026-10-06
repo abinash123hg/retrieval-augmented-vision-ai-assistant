@@ -14,7 +14,7 @@ def test_health_reports_ok(monkeypatch):
     body = response.json()
     assert body["status"] == "ok"
     assert body["ollama"] is True
-    assert body["chat_model"] == "qwen2.5:1.5b"
+    assert body["chat_model"] == "qwen2.5:3b"
     assert body["embedding_model"] == "nomic-embed-text:latest"
 
 

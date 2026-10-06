@@ -6,7 +6,7 @@ DocuLens is a local full-stack application.
 
 - Frontend: React + Vite (desktop-first document workspace UI).
 - Backend: FastAPI (Python), multi-file service architecture.
-- Models: local Ollama (`qwen2.5:1.5b` for answers, `nomic-embed-text:latest` for embeddings).
+- Models: local Ollama (`qwen2.5:3b` for answers, `nomic-embed-text:latest` for embeddings).
 - Search: local FAISS vector index.
 - Storage: local filesystem (uploads, processed JSON, indexes, reports).
 
@@ -45,7 +45,7 @@ User asks a question
 Question embedded, relevant sections retrieved
         |
         v
-Grounded answer generated via Ollama /api/generate (qwen2.5:1.5b)
+Grounded answer generated via Ollama /api/generate (qwen2.5:3b)
         |
         v
 Answer verified against retrieved evidence
@@ -220,4 +220,4 @@ npm install
 npm run dev
 ```
 
-Ollama must be running (`ollama serve`) with `qwen2.5:1.5b` and `nomic-embed-text:latest` pulled.
+Ollama must be running (`ollama serve`) with `qwen2.5:3b` and `nomic-embed-text:latest` pulled.

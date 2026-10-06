@@ -26,7 +26,7 @@ flowchart TD
     S2 --> D2[(app/data/uploads/id.pdf)]
     BG --> D3[(app/data/processed/id.json + documents.json)]
     H2 --> S9[answer_service.summarize_document]
-    S9 --> O2[Ollama POST /api/generate - qwen2.5:1.5b]
+    S9 --> O2[Ollama POST /api/generate - qwen2.5:3b]
 
     H3 --> S10[answer_service.answer_question]
     S10 --> S11[retrieval_service.retrieve]

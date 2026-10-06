@@ -27,7 +27,7 @@ Phase 3:
 - Implement document retrieval.
 
 Phase 4:
-- Connect qwen2.5:1.5b to /api/generate.
+- Connect qwen2.5:3b to /api/generate.
 - Implement grounded answers.
 - Add page-level sources.
 

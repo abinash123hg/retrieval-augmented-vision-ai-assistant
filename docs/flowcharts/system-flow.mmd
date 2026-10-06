@@ -26,7 +26,7 @@ flowchart TD
     W --> X[retrieval_service.retrieve - embed question, FAISS cosine search, min score 0.35, top-k 8]
     X -->|no section above threshold| Y[Return exact refusal sentence, evidence_status=not_found, no model call]
     X -->|sections found| Z[retrieval_service.build_context - numbered evidence blocks within 12000 chars]
-    Z --> AA[answer_service: ANSWER_PROMPT + evidence + question to Ollama /api/generate qwen2.5:1.5b, temperature 0]
+    Z --> AA[answer_service: ANSWER_PROMPT + evidence + question to Ollama /api/generate qwen2.5:3b, temperature 0]
     AA --> AB[_parse_response extracts Answer and Evidence status]
     AB --> AC[verification_service.verify - numbers in answer must exist in evidence]
     AC --> AD[citation_service.build_sources - sources built ONLY from retrieved sections]

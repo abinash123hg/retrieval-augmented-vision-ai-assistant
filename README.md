@@ -27,7 +27,7 @@ language model to answer **only from the retrieved evidence**. Every answer is
 verified against the evidence and returned with page-level citations. If the
 evidence is insufficient, the system refuses to answer instead of guessing. The
 whole pipeline runs offline on commodity hardware using Ollama
-(`nomic-embed-text` + `qwen2.5:1.5b`), FAISS, and Tesseract.
+(`nomic-embed-text` + `qwen2.5:3b`), FAISS, and Tesseract.
 
 ---
 
@@ -99,7 +99,7 @@ flowchart TD
       RS --> EMB
       RS --> VS
       RS --> RR[reranker - IDF/BM25-style]
-      RR --> AS[answer_service - qwen2.5:1.5b]
+      RR --> AS[answer_service - qwen2.5:3b]
       AS --> VER[verification_service]
       VER --> CITE[citation_service]
       CITE --> API
@@ -145,7 +145,7 @@ flowchart TD
 | OCR | Tesseract (pytesseract) | Text from images and scanned pages |
 | Tables | pdfplumber | Simple table extraction |
 | Embeddings | Ollama `nomic-embed-text` | Semantic vectors for retrieval |
-| Generation | Ollama `qwen2.5:1.5b` | Grounded answer generation |
+| Generation | Ollama `qwen2.5:3b` | Grounded answer generation |
 | Vector search | FAISS | Local similarity index |
 | Storage | Local files + JSON registry | Documents, processed content, index |
 
@@ -158,7 +158,7 @@ trained from scratch in this project.
 
 - **`nomic-embed-text` (embedding model)** — a transformer text-embedding model
   that converts questions and passages into dense vectors for semantic retrieval.
-- **`qwen2.5:1.5b` (language model)** — a small decoder-only transformer used to
+- **`qwen2.5:3b` (language model)** — a small decoder-only transformer used to
   generate the final answer, constrained by a strict grounding prompt.
 
 Both models run offline on CPU-class hardware. Their quality bounds the system's
@@ -177,7 +177,7 @@ Retrieval-Augmented Generation combines a retriever with a generator:
   dense score). No extra/cross-encoder model is added, keeping the stack local.
 - **Context builder** — formats the top-K chunks (default `top_k = 6`) into
   numbered evidence blocks within a character budget, de-duplicating repeats.
-- **Generator** — `qwen2.5:1.5b` answers under an 18-rule system prompt that
+- **Generator** — `qwen2.5:3b` answers under an 18-rule system prompt that
   forbids outside knowledge and invention.
 - **Verifier/Citer** — validates numeric claims against the evidence and builds
   at most two page-level sources.
@@ -271,7 +271,7 @@ These mechanisms **reduce** hallucination; they do not claim to eliminate it.
 
 ## Limitations
 
-- Uses a small local model (`qwen2.5:1.5b`) with limited reasoning; complex or
+- Uses a small local model (`qwen2.5:3b`) with limited reasoning; complex or
   multi-step inference may be weak.
 - Verification currently checks **numeric** claims; names, dates, and other text
   are not independently verified.
@@ -305,7 +305,7 @@ These mechanisms **reduce** hallucination; they do not claim to eliminate it.
 - Python 3.11+
 - Node.js 20+
 - Ollama running locally
-- Models: `qwen2.5:1.5b` and `nomic-embed-text:latest`
+- Models: `qwen2.5:3b` and `nomic-embed-text:latest`
 - Tesseract OCR (for scanned documents):
   https://github.com/UB-Mannheim/tesseract/wiki
 
@@ -313,7 +313,7 @@ These mechanisms **reduce** hallucination; they do not claim to eliminate it.
 
 ```bash
 ollama serve            # if not already running (on Windows it runs in the tray)
-ollama pull qwen2.5:1.5b
+ollama pull qwen2.5:3b
 ollama pull nomic-embed-text:latest
 ollama list             # verify both models are present
 ```

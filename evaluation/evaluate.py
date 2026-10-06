@@ -7,7 +7,7 @@ evaluation/documents/ and the questions in evaluation/questions.json.
 
 Design notes:
 - No new models or dependencies: it imports the existing backend services and
-  uses the same Ollama models (nomic-embed-text + qwen2.5:1.5b).
+  uses the same Ollama models (nomic-embed-text + qwen2.5:3b).
 - It runs against an ISOLATED data directory (evaluation/.evaldata) so it never
   touches the app's real uploads/index/registry.
 - Ollama must be running (the same requirement as the app itself).
@@ -296,5 +296,5 @@ if __name__ == "__main__":
         raise SystemExit(main())
     except Exception as exc:  # surface a clear message (e.g. Ollama not running)
         print(f"\nEvaluation failed: {exc}")
-        print("Is Ollama running with nomic-embed-text and qwen2.5:1.5b pulled?")
+        print("Is Ollama running with nomic-embed-text and qwen2.5:3b pulled?")
         raise SystemExit(1)

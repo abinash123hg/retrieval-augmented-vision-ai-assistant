@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     api_port: int = 8000
 
     ollama_base_url: str = "http://localhost:11434"
-    ollama_chat_model: str = "qwen2.5:1.5b"
+    ollama_chat_model: str = "qwen2.5:3b"
     ollama_embed_model: str = "nomic-embed-text:latest"
 
     max_file_size_mb: int = 25
