@@ -1,5 +1,6 @@
 from app.services import answer_service, citation_service, verification_service
 
+
 SECTIONS = [
     {
         "document_name": "annual_report.pdf",
@@ -134,3 +135,37 @@ def test_system_prompt_has_no_source_display_rules():
     # Rules 13 & 14 (display a sources list) were removed so citations stay server-side.
     assert "Display sources exactly" not in answer_service.SYSTEM_PROMPT
     assert "Sources used for this answer" not in answer_service.SYSTEM_PROMPT
+
+
+def test_summarize_flags_truncation_for_long_documents(monkeypatch):
+    monkeypatch.setattr(answer_service.ollama_service, "ensure_models_available", lambda: None)
+    captured = {}
+
+    def fake_generate(prompt, system=None):
+        captured["prompt"] = prompt
+        return "A summary."
+
+    monkeypatch.setattr(answer_service.ollama_service, "generate_answer", fake_generate)
+    long_text = "word " * 5000  # ~25k chars, well over the 12000 budget
+    processed = {"pages": [{"page_number": 1, "text": long_text}]}
+    summary, truncated = answer_service.summarize_document(processed, "short")
+    assert summary == "A summary."
+    assert truncated is True
+    # Only the budgeted prefix reaches the model, not the full text.
+    assert len(captured["prompt"]) < len(long_text)
+
+
+def test_summarize_short_document_is_not_truncated(monkeypatch):
+    monkeypatch.setattr(answer_service.ollama_service, "ensure_models_available", lambda: None)
+    monkeypatch.setattr(answer_service.ollama_service, "generate_answer", lambda prompt, system=None: "Short.")
+    processed = {"pages": [{"page_number": 1, "text": "A brief note."}]}
+    summary, truncated = answer_service.summarize_document(processed, "short")
+    assert summary == "Short."
+    assert truncated is False
+
+
+def test_summarize_empty_document_reports_no_text(monkeypatch):
+    monkeypatch.setattr(answer_service.ollama_service, "ensure_models_available", lambda: None)
+    summary, truncated = answer_service.summarize_document({"pages": []}, "short")
+    assert "no readable text" in summary.lower()
+    assert truncated is False

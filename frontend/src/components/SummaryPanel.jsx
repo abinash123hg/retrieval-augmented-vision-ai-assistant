@@ -12,6 +12,7 @@ const MODES = [
 export default function SummaryPanel({ documents }) {
   const [activeMode, setActiveMode] = useState(null);
   const [summary, setSummary] = useState(null);
+  const [notice, setNotice] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -27,8 +28,10 @@ export default function SummaryPanel({ documents }) {
     try {
       const { data } = await api.get(`/documents/${doc.id}/summary`, { params: { mode } });
       setSummary(data.summary);
+      setNotice(data.warning || (data.truncated ? 'Summary covers only the first part of this document.' : null));
     } catch (err) {
       setSummary(null);
+      setNotice(null);
       setError(errorDetail(err, 'Could not generate the summary.'));
     } finally {
       setLoading(false);
@@ -66,6 +69,7 @@ export default function SummaryPanel({ documents }) {
       {!loading && error && <p className="summary-error">{error}</p>}
       {!loading && summary && (
         <div className="summary-card">
+          {notice && <p className="summary-notice" role="status">{notice}</p>}
           <p className="summary-text">{summary}</p>
         </div>
       )}

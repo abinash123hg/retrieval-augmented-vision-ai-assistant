@@ -460,6 +460,14 @@
   color: var(--error);
 }
 
+.summary-notice {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
 .summary-skeleton {
   padding: 4px 0;
 }

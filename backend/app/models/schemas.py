@@ -89,3 +89,5 @@ class SummaryResponse(BaseModel):
     document_id: str
     mode: str
     summary: str
+    truncated: bool = False
+    warning: str | None = None

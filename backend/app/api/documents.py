@@ -55,5 +55,15 @@ def summarize_document(document_id: str, mode: str = "short") -> SummaryResponse
             mode=mode,
             summary="This document is still being processed. Please wait until it is ready.",
         )
-    summary = answer_service.summarize_document(processed, mode)
-    return SummaryResponse(document_id=document_id, mode=mode, summary=summary)
+    summary, truncated = answer_service.summarize_document(processed, mode)
+    return SummaryResponse(
+        document_id=document_id,
+        mode=mode,
+        summary=summary,
+        truncated=truncated,
+        warning=(
+            "This document is long; the summary covers only its first part."
+            if truncated
+            else None
+        ),
+    )

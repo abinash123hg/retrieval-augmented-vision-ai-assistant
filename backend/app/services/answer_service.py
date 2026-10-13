@@ -79,6 +79,9 @@ _MODE_INSTRUCTIONS = {
     "key_points": "List the key points as bullet lines, one per line starting with '-'.",
 }
 
+# Character budget for summary context; anything beyond this is not summarized.
+_SUMMARY_CHAR_BUDGET = 12000
+
 
 def _parse_response(raw: str) -> str:
     """Extract the answer text from the model output.
@@ -145,17 +148,24 @@ def answer_question(question: str, document_ids: list[str] | None = None) -> Cha
     )
 
 
-def summarize_document(processed: dict, mode: str = "short") -> str:
+def summarize_document(processed: dict, mode: str = "short") -> tuple[str, bool]:
+    """Summarize a processed document. Returns (summary_text, truncated).
+
+    ``truncated`` is True when the source text exceeded the model context budget
+    and only the first part was summarized, so the caller can warn the user.
+    """
     ollama_service.ensure_models_available()
     pages = processed.get("pages", [])
     text_parts = [
         f"[Page {p['page_number']}]\n{p.get('text', '')}" for p in pages if p.get("text")
     ]
-    context = "\n\n".join(text_parts)[:12000]
-    if not context.strip():
-        return "This document has no readable text to summarize."
+    full_context = "\n\n".join(text_parts)
+    if not full_context.strip():
+        return "This document has no readable text to summarize.", False
+    truncated = len(full_context) > _SUMMARY_CHAR_BUDGET
+    context = full_context[:_SUMMARY_CHAR_BUDGET]
     prompt = SUMMARY_PROMPT.format(
         mode=mode, mode_instruction=_MODE_INSTRUCTIONS.get(mode, _MODE_INSTRUCTIONS["short"]),
         context=context,
     )
-    return ollama_service.generate_answer(prompt)
+    return ollama_service.generate_answer(prompt), truncated
