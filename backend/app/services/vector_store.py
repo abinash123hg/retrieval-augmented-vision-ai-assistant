@@ -4,6 +4,7 @@ Vectors are L2-normalized so inner product equals cosine similarity.
 """
 
 import json
+import os
 import threading
 from pathlib import Path
 
@@ -46,10 +47,16 @@ def _init_index(dimension: int) -> None:
 
 
 def _persist() -> None:
+    # Write to temp files in the same folder, then atomically swap them in, so a
+    # crash mid-write can never leave a corrupt or half-updated index on disk.
     index_file, meta_file = _paths()
     index_file.parent.mkdir(parents=True, exist_ok=True)
-    faiss.write_index(_index, str(index_file))
-    meta_file.write_text(json.dumps(_meta, ensure_ascii=False), encoding="utf-8")
+    index_tmp = index_file.with_suffix(".faiss.tmp")
+    meta_tmp = meta_file.with_suffix(".json.tmp")
+    faiss.write_index(_index, str(index_tmp))
+    meta_tmp.write_text(json.dumps(_meta, ensure_ascii=False), encoding="utf-8")
+    os.replace(index_tmp, index_file)
+    os.replace(meta_tmp, meta_file)
 
 
 def _normalize(vectors: np.ndarray) -> np.ndarray:
