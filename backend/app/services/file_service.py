@@ -166,6 +166,31 @@ def clear_all() -> None:
     settings.index_path.mkdir(parents=True, exist_ok=True)
 
 
+def recover_interrupted_documents() -> int:
+    """Mark documents left in waiting/processing as failed after a restart.
+
+    A server crash mid-pipeline would otherwise leave a document stuck forever,
+    with the frontend polling an unfinished state. Returns how many were reset.
+    """
+    with _lock:
+        registry = _load_registry()
+        stale = [
+            doc_id
+            for doc_id, record in registry.items()
+            if record.get("processing_status") in {"waiting", "processing"}
+        ]
+        for doc_id in stale:
+            registry[doc_id]["processing_status"] = "failed"
+            registry[doc_id]["error_message"] = (
+                "Processing was interrupted. Please upload the file again."
+            )
+        if stale:
+            _save_registry(registry)
+    if stale:
+        logger.info("Recovered %d interrupted document(s) on startup.", len(stale))
+    return len(stale)
+
+
 def process_document(document_id: str) -> None:
     """Full processing pipeline for one uploaded document.
 
@@ -233,8 +258,13 @@ def process_document(document_id: str) -> None:
         )
     except Exception as exc:
         logger.error("Processing failed for %s: %s", document_id, exc)
-        update_document(
-            document_id,
-            processing_status="failed",
-            error_message="This file could not be processed. Please try uploading it again.",
-        )
+        try:
+            update_document(
+                document_id,
+                processing_status="failed",
+                error_message="This file could not be processed. Please try uploading it again.",
+            )
+        except DocumentNotFoundError:
+            # The document was deleted while it was being processed; nothing to mark.
+            logger.info("Document %s was removed during processing.", document_id)
+

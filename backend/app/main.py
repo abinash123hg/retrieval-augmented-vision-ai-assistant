@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -6,17 +8,29 @@ from .api import chat, documents, health, reports
 from .config import get_settings
 from .core.errors import AppError
 from .core.logging_config import get_logger, setup_logging
+from .services import file_service
 
 setup_logging()
 logger = get_logger(__name__)
 
 settings = get_settings()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # A previous run may have crashed mid-pipeline; mark those documents failed
+    # so the UI stops polling a state that will never resolve.
+    file_service.recover_interrupted_documents()
+    yield
+
+
 app = FastAPI(
     title=settings.app_name,
     description="Local document reading and question-answering with grounded answers.",
     version="0.1.0",
+    lifespan=lifespan,
 )
+
 
 app.add_middleware(
     CORSMiddleware,

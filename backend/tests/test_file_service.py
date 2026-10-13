@@ -53,3 +53,22 @@ def test_list_and_delete():
     assert not any(d.id == document_id for d in file_service.list_documents())
     with pytest.raises(Exception):
         file_service.get_document(document_id)
+
+
+def test_recover_interrupted_documents_marks_stale_as_failed():
+    doc_id, _ = file_service.save_upload("stuck.pdf", PDF_BYTES)
+    # Simulate a crash mid-pipeline: leave the document in "processing".
+    file_service.update_document(doc_id, processing_status="processing")
+
+    recovered = file_service.recover_interrupted_documents()
+    assert recovered >= 1
+    doc = file_service.get_document(doc_id)
+    assert doc.processing_status == "failed"
+    assert "interrupted" in (doc.error_message or "").lower()
+
+
+def test_recover_leaves_finished_documents_untouched():
+    doc_id, _ = file_service.save_upload("done.pdf", PDF_BYTES)
+    file_service.update_document(doc_id, processing_status="ready")
+    file_service.recover_interrupted_documents()
+    assert file_service.get_document(doc_id).processing_status == "ready"

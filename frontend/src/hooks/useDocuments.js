@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../api/client';
 import { errorDetail } from '../utils/formatters';
 
 const ACTIVE_STATUSES = new Set(['waiting', 'processing']);
 const POLL_INTERVAL_MS = 2500;
+const MAX_POLL_MS = 10 * 60 * 1000;
 
 export default function useDocuments() {
   const [documents, setDocuments] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  // Deadline for the current polling run; a ref so re-renders don't reset it.
+  const pollDeadline = useRef(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -25,8 +28,23 @@ export default function useDocuments() {
   }, [refresh]);
 
   useEffect(() => {
-    if (!documents.some((d) => ACTIVE_STATUSES.has(d.processing_status))) return undefined;
-    const timer = setInterval(refresh, POLL_INTERVAL_MS);
+    const hasActive = documents.some((d) => ACTIVE_STATUSES.has(d.processing_status));
+    if (!hasActive) {
+      pollDeadline.current = null;
+      return undefined;
+    }
+    if (pollDeadline.current === null) {
+      pollDeadline.current = Date.now() + MAX_POLL_MS;
+    }
+    const timer = setInterval(() => {
+      if (Date.now() >= pollDeadline.current) {
+        clearInterval(timer);
+        pollDeadline.current = null;
+        setError('Document processing is taking longer than expected. Refresh to check its status.');
+        return;
+      }
+      refresh();
+    }, POLL_INTERVAL_MS);
     return () => clearInterval(timer);
   }, [documents, refresh]);
 
