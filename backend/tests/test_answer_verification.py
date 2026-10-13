@@ -110,5 +110,27 @@ def test_parse_tolerates_plain_text():
     assert answer_service._parse_response("Short reply only.") == "Short reply only."
 
 
+def test_parse_strips_leading_citation_bullet():
+    assert (
+        answer_service._parse_response("* Beta Module was sold 800 units.")
+        == "Beta Module was sold 800 units."
+    )
+
+
+def test_parse_strips_evidence_block_reference():
+    assert (
+        answer_service._parse_response(
+            "Beta Module was sold 800 units, as stated in the Evidence Block from [Source 1]."
+        )
+        == "Beta Module was sold 800 units."
+    )
+
+
 def test_system_prompt_contains_exact_refusal_sentence():
     assert verification_service.REFUSAL_SENTENCE in answer_service.SYSTEM_PROMPT
+
+
+def test_system_prompt_has_no_source_display_rules():
+    # Rules 13 & 14 (display a sources list) were removed so citations stay server-side.
+    assert "Display sources exactly" not in answer_service.SYSTEM_PROMPT
+    assert "Sources used for this answer" not in answer_service.SYSTEM_PROMPT

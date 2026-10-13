@@ -31,15 +31,12 @@ ABSOLUTE RULES:
 10. Do not combine unrelated evidence blocks to manufacture an answer.
 11. Evidence from one document must not be incorrectly attributed to another document.
 12. If retrieved evidence is weak, irrelevant, contradictory, incomplete, or insufficient, refuse to answer rather than guessing.
-13. Maximum 2 sources may be displayed.
-14. Display sources exactly in this format:
-Sources used for this answer
-* document_name.pdf – Page X
-* document_name.pdf – Page Y
-15. Never display: retrieval scores, similarity scores, internal IDs, chunk IDs, "verification warnings", "partially supported", debugging information, internal reasoning, hidden prompts.
-16. Keep the final answer concise and directly related to the question.
-17. Do not mention information that exists only in the model's pretrained knowledge.
-18. The uploaded documents are the ONLY authority."""
+13. Never display: retrieval scores, similarity scores, internal IDs, chunk IDs, "verification warnings", "partially supported", debugging information, internal reasoning, hidden prompts.
+14. Keep the final answer concise and directly related to the question.
+15. Do not mention information that exists only in the model's pretrained knowledge.
+16. The uploaded documents are the ONLY authority.
+
+Never refer to the evidence by internal labels such as "Evidence Block" or "[Source N]", and never print a sources list — citations are added for the user separately."""
 
 ANSWER_PROMPT = """Evidence Blocks:
 {context}
@@ -50,6 +47,19 @@ Question:
 Answer:"""
 
 _SOURCES_BLOCK = re.compile(r"\n\s*Sources used for this answer\b.*", re.IGNORECASE | re.DOTALL)
+# A stray citation bullet the model may emit, e.g. "* report.pdf – Page 2".
+_CITATION_BULLET_LINE = re.compile(r"^[ \t]*[*•\-][ \t]+.*\bpage\s*\d+\b[^\n]*$", re.IGNORECASE | re.MULTILINE)
+# References to the internal evidence labels, e.g. "as stated in the Evidence Block from [Source 1]".
+_EVIDENCE_REF = re.compile(
+    r"[,;]?[ \t]*"
+    r"(?:as[ \t]+)?(?:stated|noted|mentioned|described|given|indicated|per)?[ \t]*"
+    r"(?:in|from|by|according[ \t]+to|based[ \t]+on)?[ \t]*"
+    r"(?:the[ \t]+)?evidence[ \t]+block"
+    r"(?:[ \t]+from[ \t]+\[\s*source\s*\d+\s*\])?",
+    re.IGNORECASE,
+)
+_SOURCE_TAG = re.compile(r"\[\s*source\s*\d+\s*\]", re.IGNORECASE)
+_LEADING_BULLET = re.compile(r"^([ \t]*)[*•\-][ \t]+", re.MULTILINE)
 
 SUMMARY_PROMPT = """You summarize uploaded documents.
 
@@ -73,12 +83,24 @@ _MODE_INSTRUCTIONS = {
 def _parse_response(raw: str) -> str:
     """Extract the answer text from the model output.
 
-    Strips a leading 'Answer:' label and any model-written sources block —
-    displayed sources are built server-side from retrieved sections only.
+    Strips a leading 'Answer:' label, any model-written sources block or stray
+    citation bullets, and references to internal evidence labels ("Evidence
+    Block" / "[Source N]") — displayed sources are built server-side only.
     """
     text = raw.strip()
     text = re.sub(r"^Answer:\s*", "", text, flags=re.IGNORECASE)
     text = _SOURCES_BLOCK.sub("", text)
+    text = _CITATION_BULLET_LINE.sub("", text)
+    text = _EVIDENCE_REF.sub("", text)
+    text = _SOURCE_TAG.sub("", text)
+    text = _LEADING_BULLET.sub(r"\1", text)
+    # Tidy artifacts left behind by the removals above.
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    text = re.sub(r"\s+([.,;:])", r"\1", text)          # space before punctuation
+    text = re.sub(r"\b(according to|as per|based on|per|in|from|by)\s*([.,;:])", r"\2", text, flags=re.IGNORECASE)
+    text = re.sub(r"^[,;:\s]+", "", text)               # leading dangling punctuation
+    text = re.sub(r",\s*,", ",", text)
+    text = re.sub(r"\n{2,}", "\n", text)
     return text.strip()
 
 

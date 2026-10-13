@@ -177,7 +177,7 @@ Retrieval-Augmented Generation combines a retriever with a generator:
   dense score). No extra/cross-encoder model is added, keeping the stack local.
 - **Context builder** — formats the top-K chunks (default `top_k = 6`) into
   numbered evidence blocks within a character budget, de-duplicating repeats.
-- **Generator** — `qwen2.5:3b` answers under an 18-rule system prompt that
+- **Generator** — `qwen2.5:3b` answers under a 16-rule system prompt that
   forbids outside knowledge and invention.
 - **Verifier/Citer** — validates numeric claims against the evidence and builds
   at most two page-level sources.
@@ -252,7 +252,7 @@ Multiple layers reduce hallucination:
 
 1. **Evidence gating** — if no chunk clears the similarity threshold, the model
    is never called and the system refuses.
-2. **Strict grounding prompt** — 18 rules forbid outside knowledge, invention of
+2. **Strict grounding prompt** — 16 rules forbid outside knowledge, invention of
    names/numbers/dates, and merging unrelated evidence.
 3. **Numeric verification** — every multi-digit number in a draft answer must
    appear in the retrieved evidence (or match a cited page); otherwise the draft
