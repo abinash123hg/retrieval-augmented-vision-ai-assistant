@@ -51,3 +51,8 @@ class AnswerGenerationError(AppError):
 class ReportGenerationError(AppError):
     status_code = 500
     user_message = "The report could not be created. Please try again."
+
+
+class ReportNotFoundError(AppError):
+    status_code = 404
+    user_message = "This report is no longer available."

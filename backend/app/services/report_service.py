@@ -16,7 +16,7 @@ from reportlab.platypus import (
 )
 
 from ..config import get_settings
-from ..core.errors import ReportGenerationError
+from ..core.errors import ReportGenerationError, ReportNotFoundError
 from ..core.logging_config import get_logger
 from ..core.security import is_within_directory
 from ..models.schemas import ReportRequest
@@ -31,7 +31,7 @@ def _escape(text: str) -> str:
 def generate_report(request: ReportRequest) -> tuple[str, str, Path]:
     settings = get_settings()
     report_id = uuid.uuid4().hex
-    file_name = f"doculens-report-{report_id[:8]}.pdf"
+    file_name = f"doculens-report-{report_id}.pdf"
     path = settings.report_path / file_name
 
     try:
@@ -80,12 +80,10 @@ def generate_report(request: ReportRequest) -> tuple[str, str, Path]:
 
 def report_file(report_id: str) -> Path:
     settings = get_settings()
-    if not report_id.isalnum():
-        raise ReportGenerationError("This report is no longer available.")
-    matches = list(settings.report_path.glob(f"*{report_id[:8]}*.pdf"))
-    if not matches:
-        raise ReportGenerationError("This report is no longer available.")
-    path = matches[0]
-    if not is_within_directory(path, settings.report_path):
-        raise ReportGenerationError("This report is no longer available.")
+    # A valid report_id is exactly a 32-char uuid4 hex string.
+    if len(report_id) != 32 or any(c not in "0123456789abcdef" for c in report_id.lower()):
+        raise ReportNotFoundError()
+    path = settings.report_path / f"doculens-report-{report_id.lower()}.pdf"
+    if not path.is_file() or not is_within_directory(path, settings.report_path):
+        raise ReportNotFoundError()
     return path
