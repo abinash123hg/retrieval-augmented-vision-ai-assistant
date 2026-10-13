@@ -115,7 +115,7 @@ def chunk_pages(
 
     for page, text in zip(pages, cleaned_pages):
         text = clean_text(_strip_boilerplate(text, boilerplate))
-        if len(text) < MIN_SECTION_CHARS:
+        if not text:
             continue
         page_number = page["page_number"]
         content_type = "ocr" if page.get("ocr_used") else "text"

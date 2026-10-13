@@ -53,6 +53,20 @@ def test_short_page_content_is_never_lost():
     assert "8450" in " ".join(s["content"] for s in sections)
 
 
+def test_very_short_page_is_still_indexed():
+    # A page below MIN_SECTION_CHARS must not be dropped before the whole-page
+    # fallback runs; otherwise short receipts/stubs become unsearchable.
+    pages = [{"page_number": 1, "text": "Total 8450 USD", "ocr_used": True}]
+    sections = chunk_service.chunk_pages("d3", "stub.png", pages)
+    assert sections, "a short but non-empty page must still produce a section"
+    assert "8450" in " ".join(s["content"] for s in sections)
+
+
+def test_empty_page_produces_no_section():
+    pages = [{"page_number": 1, "text": "   \n  \n", "ocr_used": False}]
+    assert chunk_service.chunk_pages("d4", "blank.png", pages) == []
+
+
 def test_retrieval_returns_relevant_page(monkeypatch):
     monkeypatch.setattr(retrieval_service.embedding_service, "embed_query", fake_embed)
     _seed()
