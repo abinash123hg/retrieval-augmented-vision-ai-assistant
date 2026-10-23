@@ -133,5 +133,175 @@
     "expected_page": 1,
     "answerable": true,
     "document": "sample_report.pdf"
+  },
+  {
+    "id": 16,
+    "category": "direct_factual",
+    "question": "What is the revision number of the Meridian Labs maintenance manual?",
+    "expected_answer": "Revision 3",
+    "expected_page": 1,
+    "answerable": true,
+    "document": "maintenance_manual.pdf",
+    "source_quote": "Revision: 3"
+  },
+  {
+    "id": 17,
+    "category": "direct_factual",
+    "question": "After how many operating hours must the pressure valve be replaced?",
+    "expected_answer": "4500 hours",
+    "expected_page": 1,
+    "answerable": true,
+    "document": "maintenance_manual.pdf",
+    "source_quote": "The pressure valve must be replaced after 4500 operating hours."
+  },
+  {
+    "id": 18,
+    "category": "direct_factual",
+    "question": "What is the inspection interval stated in the maintenance manual?",
+    "expected_answer": "90 days",
+    "expected_page": 1,
+    "answerable": true,
+    "document": "maintenance_manual.pdf",
+    "source_quote": "The inspection interval is every 90 days."
+  },
+  {
+    "id": 19,
+    "category": "direct_factual",
+    "question": "What is the part number of the Filter Cartridge?",
+    "expected_answer": "FC-101",
+    "expected_page": 2,
+    "answerable": true,
+    "document": "maintenance_manual.pdf",
+    "source_quote": "Filter Cartridge, part number FC-101, costs 45 USD."
+  },
+  {
+    "id": 20,
+    "category": "table_based",
+    "question": "What is the unit cost of the Seal Ring spare part?",
+    "expected_answer": "18 USD",
+    "expected_page": 2,
+    "answerable": true,
+    "document": "maintenance_manual.pdf",
+    "source_quote": "Seal Ring, part number SR-202, costs 18 USD."
+  },
+  {
+    "id": 21,
+    "category": "table_based",
+    "question": "What is the recommended spare-parts budget for 2025?",
+    "expected_answer": "3800 USD",
+    "expected_page": 2,
+    "answerable": true,
+    "document": "maintenance_manual.pdf",
+    "source_quote": "The recommended spare-parts budget for 2025 is 3800 USD."
+  },
+  {
+    "id": 22,
+    "category": "direct_factual",
+    "question": "What is the warranty period of the equipment?",
+    "expected_answer": "24 months",
+    "expected_page": 3,
+    "answerable": true,
+    "document": "maintenance_manual.pdf",
+    "source_quote": "The warranty period is 24 months from the issue date."
+  },
+  {
+    "id": 23,
+    "category": "multi_page",
+    "question": "During what hours does the service hotline operate?",
+    "expected_answer": "9 AM to 5 PM",
+    "expected_page": 3,
+    "answerable": true,
+    "document": "maintenance_manual.pdf",
+    "source_quote": "The service hotline operates from 9 AM to 5 PM."
+  },
+  {
+    "id": 24,
+    "category": "citation_page",
+    "question": "Which spare part has part number PV-303?",
+    "expected_answer": "Pressure Valve",
+    "expected_page": 2,
+    "answerable": true,
+    "document": "maintenance_manual.pdf",
+    "source_quote": "Pressure Valve, part number PV-303, costs 320 USD."
+  },
+  {
+    "id": 25,
+    "category": "direct_factual",
+    "question": "On which days is support available according to the manual?",
+    "expected_answer": "weekdays only",
+    "expected_page": 3,
+    "answerable": true,
+    "document": "maintenance_manual.pdf",
+    "source_quote": "Support is available on weekdays only."
+  },
+  {
+    "id": 26,
+    "category": "near_miss",
+    "question": "After how many operating hours must the Filter Cartridge be replaced?",
+    "expected_answer": null,
+    "expected_page": null,
+    "answerable": false,
+    "document": "maintenance_manual.pdf",
+    "note": "Near-miss: only the pressure valve has a stated replacement interval (4500 hours); the Filter Cartridge has none."
+  },
+  {
+    "id": 27,
+    "category": "near_miss",
+    "question": "What is the revision number of the 2026 edition of the maintenance manual?",
+    "expected_answer": null,
+    "expected_page": null,
+    "answerable": false,
+    "document": "maintenance_manual.pdf",
+    "note": "Near-miss: the manual is Revision 3 issued 12 March 2025; no 2026 edition exists."
+  },
+  {
+    "id": 28,
+    "category": "near_miss",
+    "question": "What is the unit cost of the Pressure Valve in the Northwind product catalog?",
+    "expected_answer": null,
+    "expected_page": null,
+    "answerable": false,
+    "document": "product_catalog.pdf",
+    "note": "Near-miss: Pressure Valve (320 USD) appears only in the maintenance manual, not in the Northwind product catalog."
+  },
+  {
+    "id": 29,
+    "category": "near_miss",
+    "question": "What is the recommended spare-parts budget for 2026?",
+    "expected_answer": null,
+    "expected_page": null,
+    "answerable": false,
+    "document": "maintenance_manual.pdf",
+    "note": "Near-miss: only the 2025 budget (3800 USD) is stated."
+  },
+  {
+    "id": 30,
+    "category": "near_miss",
+    "question": "What warranty period does the Acme Corp annual report specify?",
+    "expected_answer": null,
+    "expected_page": null,
+    "answerable": false,
+    "document": "sample_report.pdf",
+    "note": "Near-miss: the warranty period (24 months) is in the maintenance manual, not in the Acme Corp annual report."
+  },
+  {
+    "id": 31,
+    "category": "near_miss",
+    "question": "What was the total catalog revenue of Meridian Labs in 2025?",
+    "expected_answer": null,
+    "expected_page": null,
+    "answerable": false,
+    "document": "maintenance_manual.pdf",
+    "note": "Near-miss: the manual states a spare-parts budget (3800 USD), not a catalog revenue; catalog revenue (92000 USD) belongs to Northwind."
+  },
+  {
+    "id": 32,
+    "category": "unanswerable",
+    "question": "Who is the author of the Meridian Labs maintenance manual?",
+    "expected_answer": null,
+    "expected_page": null,
+    "answerable": false,
+    "document": "maintenance_manual.pdf",
+    "note": "No author is named anywhere in the document."
   }
 ]

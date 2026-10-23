@@ -214,16 +214,23 @@ A lightweight evaluation set lives in `evaluation/`:
 
 ```
 evaluation/
-├── documents/          sample_report.pdf, sample_invoice.png, product_catalog.pdf
-├── questions.json      15 labelled questions
+├── documents/          sample_report.pdf, sample_invoice.png, product_catalog.pdf,
+│                       maintenance_manual.pdf  (synthetic fixtures)
+├── make_documents.py   regenerates maintenance_manual.pdf
+├── questions.json      32 labelled questions
 ├── evaluate.py         runs the real pipeline and scores it
 └── results/            timestamped <run>-<mode>/ folders (generated, not checked in)
 ```
 
-The 15 questions cover: direct factual, table-based, OCR/image text, multi-page,
+The 32 questions cover: direct factual, table-based, OCR/image text, multi-page,
 multi-document isolation, citation/page verification, and **unanswerable**
-questions (`answerable: false`) that must be refused. Each question records
-`question`, `expected_answer`, `expected_page`, `answerable`, and `document`.
+questions (`answerable: false`) that must be refused — 10 of them, including 6
+**near-misses** that name a real fact from the wrong document or the wrong year,
+so a system that merely pattern-matches gets caught. Each question records
+`question`, `expected_answer`, `expected_page`, `answerable` and `document`;
+answerable questions also carry a `source_quote` taken verbatim from the document
+so the ground truth is auditable. All fixtures are synthetic (a made-up company
+and a reserved `.example` address) — no real personal or medical data.
 
 ---
 
@@ -263,7 +270,7 @@ backend/.venv/Scripts/python.exe evaluation/evaluate.py --unscoped  # all docume
 
 Because the system uses a small local model and depends on OCR quality, the scores
 are a **realistic snapshot on a tiny sample corpus**, not a guaranteed benchmark —
-a perfect score here reflects the small, easy 3-document set, not general
+a perfect score here reflects the small, easy 4-document set, not general
 capability, and results will vary with a larger or harder corpus.
 
 ---
