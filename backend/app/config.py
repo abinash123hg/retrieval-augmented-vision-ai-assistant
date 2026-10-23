@@ -37,7 +37,6 @@ class Settings(BaseSettings):
     upload_dir: str = "app/data/uploads"
     processed_dir: str = "app/data/processed"
     index_dir: str = "app/data/indexes"
-    report_dir: str = "app/data/reports"
 
     tesseract_cmd: str | None = None
 
@@ -58,10 +57,6 @@ class Settings(BaseSettings):
         return self._resolve(self.index_dir)
 
     @property
-    def report_path(self) -> Path:
-        return self._resolve(self.report_dir)
-
-    @property
     def max_file_size_bytes(self) -> int:
         return self.max_file_size_mb * 1024 * 1024
 
@@ -70,7 +65,6 @@ class Settings(BaseSettings):
             self.upload_path,
             self.processed_path,
             self.index_path,
-            self.report_path,
         ):
             path.mkdir(parents=True, exist_ok=True)
 

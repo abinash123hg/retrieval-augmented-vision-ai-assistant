@@ -4,7 +4,7 @@ REM Double-click this file, or run "start.bat" in a VS Code terminal.
 
 cd /d "%~dp0"
 
-echo [1/3] Checking Ollama...
+echo [1/2] Checking Ollama...
 curl -s --max-time 3 http://localhost:11434/api/tags >nul 2>&1
 if errorlevel 1 (
     echo       Ollama is not running. Starting it now...
@@ -15,17 +15,13 @@ if errorlevel 1 (
     echo       No separate Ollama terminal is needed - that is expected.
 )
 
-echo [2/3] Starting backend on http://127.0.0.1:8000 ...
-start "DocuLens Backend" cmd /k "cd /d %~dp0backend && .venv\Scripts\activate && uvicorn app.main:app --reload --port 8000"
-
-echo [3/3] Starting frontend on http://localhost:5173 ...
-start "DocuLens Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
+echo [2/2] Starting DocuLens on http://127.0.0.1:8000 ...
+start "DocuLens" cmd /k "cd /d %~dp0backend && .venv\Scripts\activate && uvicorn app.main:app --reload --port 8000"
 
 echo.
 echo ============================================
-echo  DocuLens is starting in two new windows:
-echo    App:      http://localhost:5173
-echo    Backend:  http://127.0.0.1:8000
+echo  DocuLens is starting in a new window:
+echo    App:      http://127.0.0.1:8000
 echo    API docs: http://127.0.0.1:8000/docs
-echo  Close those windows to stop the app.
+echo  Close that window to stop the app.
 echo ============================================

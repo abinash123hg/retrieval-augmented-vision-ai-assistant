@@ -10,25 +10,13 @@ venv/
 .env
 backend/.env
 
-# Node
-node_modules/
-frontend/dist/
-.vite/
-
-# Local data (uploads, processed content, indexes, reports)
+# Local data (uploads, processed content, indexes)
 backend/app/data/uploads/*
 backend/app/data/processed/*
 backend/app/data/indexes/*
-backend/app/data/reports/*
 !backend/app/data/uploads/.gitkeep
 !backend/app/data/processed/.gitkeep
 !backend/app/data/indexes/.gitkeep
-!backend/app/data/reports/.gitkeep
-
-# Evaluation runtime store (isolated index/uploads created by evaluate.py)
-evaluation/.evaldata/
-# Evaluation outputs (timestamped result folders; regenerate locally, not checked in)
-evaluation/results/
 
 # IDE / OS
 .vscode/

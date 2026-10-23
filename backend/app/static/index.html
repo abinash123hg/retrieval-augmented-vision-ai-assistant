@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563EB' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DocuLens — Ask your documents</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div id="root">
+      <div class="app">
+        <header class="app-header">
+          <div class="brand">
+            <span class="brand-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                <circle cx="11" cy="11" r="3" />
+                <path d="m16 16 4.5 4.5" />
+              </svg>
+            </span>
+            <div>
+              <h1 class="brand-title">DocuLens</h1>
+              <p class="brand-tagline">Ask your documents. Get grounded answers.</p>
+            </div>
+          </div>
+          <div id="health" class="health" title="Checking backend status…">
+            <span class="health-dot health-dot-loading" aria-hidden="true"></span>
+            <span class="health-label">Checking…</span>
+          </div>
+        </header>
+
+        <div class="app-body">
+          <aside class="sidebar">
+            <!-- Upload panel -->
+            <section class="sidebar-section">
+              <div
+                id="upload-zone"
+                class="upload-zone"
+                role="button"
+                tabindex="0"
+                aria-label="Upload documents: drag and drop files here or browse"
+              >
+                <svg class="upload-zone-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.4 8.3" />
+                  <path d="M12 12v9" />
+                  <path d="m16 16-4-4-4 4" />
+                </svg>
+                <p class="upload-zone-text">Drag &amp; drop files here</p>
+                <button type="button" id="browse-btn" class="btn btn-primary browse-btn">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2" />
+                  </svg>
+                  Browse files
+                </button>
+                <p class="upload-zone-hint">PDF, PNG, JPG · Max 25 MB per file</p>
+                <input id="file-input" type="file" accept=".pdf,.png,.jpg,.jpeg" multiple hidden />
+              </div>
+              <ul id="upload-list" class="upload-list"></ul>
+            </section>
+
+            <!-- Documents -->
+            <section class="sidebar-section">
+              <h2 class="sidebar-title">
+                Documents <span id="doc-count" class="sidebar-count">0</span>
+              </h2>
+              <div id="documents-container"></div>
+            </section>
+
+            <!-- Summary -->
+            <section id="summary-panel" class="sidebar-section summary-panel" hidden>
+              <h2 class="sidebar-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z" />
+                  <path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
+                </svg>
+                Summary
+              </h2>
+              <p id="summary-doc" class="summary-doc"></p>
+              <div class="summary-buttons">
+                <button type="button" class="btn btn-quiet summary-btn" data-mode="short">Short summary</button>
+                <button type="button" class="btn btn-quiet summary-btn" data-mode="detailed">Detailed summary</button>
+                <button type="button" class="btn btn-quiet summary-btn" data-mode="key_points">Key points</button>
+              </div>
+              <div id="summary-body"></div>
+            </section>
+          </aside>
+
+          <main class="main">
+            <div class="chat-window">
+              <div id="chat-messages" class="chat-messages"></div>
+              <div id="doc-scope-wrap" class="doc-scope" hidden>
+                <label class="doc-scope-label" for="doc-scope-select">Ask about:</label>
+                <select id="doc-scope-select" class="doc-scope-select">
+                  <option value="">All documents</option>
+                </select>
+              </div>
+              <div class="question-bar">
+                <textarea
+                  id="question-input"
+                  class="question-input"
+                  rows="2"
+                  placeholder="Ask a question about your documents…"
+                  aria-label="Your question"
+                ></textarea>
+                <button type="button" id="ask-btn" class="btn btn-primary ask-btn" disabled title="Ask is available once a document finishes processing.">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m22 2-7 20-4-9-9-4z" />
+                    <path d="M22 2 11 13" />
+                  </svg>
+                  Ask
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container" class="toast-container" role="status" aria-live="polite"></div>
+    <script src="/app.js"></script>
+  </body>
+</html>

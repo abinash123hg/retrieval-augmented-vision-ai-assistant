@@ -11,6 +11,5 @@ pillow
 pytesseract
 faiss-cpu
 numpy
-reportlab
 pytest
 pytest-asyncio

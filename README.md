@@ -57,7 +57,6 @@ concerns. There is a need for a **small, local, auditable** assistant that:
 5. Prevent hallucination through a strict system prompt, evidence gating, and
    numeric verification, with a fixed refusal sentence when evidence is lacking.
 6. Support multiple documents with per-document isolation and comparison.
-7. Provide a lightweight, reproducible evaluation harness with realistic metrics.
 
 ---
 
@@ -77,37 +76,37 @@ model is trained in this project; both are used off-the-shelf via Ollama.
 
 ## System Architecture
 
+The backend is a single FastAPI service that both exposes the REST API under
+`/api` and serves the plain HTML/CSS/JS user interface at `/` (no separate
+frontend build or dev server). The application logic lives in a small set of
+flat modules.
+
 ```mermaid
 flowchart TD
-    U[User] --> FE[React + Vite Frontend]
-    FE -->|REST /documents /chat /reports| API[FastAPI Backend]
+    U[User] --> FE[Vanilla HTML/CSS/JS UI]
+    FE -->|REST /health /documents /chat| API[FastAPI Backend]
+    API -->|serves the static UI at /| FE
 
     subgraph Ingest[Document Ingestion]
-      API --> FS[file_service]
-      FS --> PS[pdf_service - PyMuPDF]
-      FS --> OCR[ocr_service - Tesseract]
-      FS --> TS[table_service - pdfplumber]
-      PS --> CS[chunk_service]
-      OCR --> CS
-      TS --> CS
-      CS --> EMB[embedding_service - nomic-embed-text]
-      EMB --> VS[(FAISS vector index)]
+      API --> PDF[pdf_service - upload, registry, PyMuPDF, Tesseract OCR, pdfplumber tables]
+      PDF --> CH[rag_service.chunk_pages]
+      CH --> EMB[rag_service.embed_texts - nomic-embed-text]
+      EMB --> VS[(FAISS vector index - vector_store)]
     end
 
     subgraph Query[Question Answering]
-      API --> RS[retrieval_service]
-      RS --> EMB
-      RS --> VS
-      RS --> RR[reranker - IDF/BM25-style]
-      RR --> AS[answer_service - qwen2.5:3b]
-      AS --> VER[verification_service]
-      VER --> CITE[citation_service]
+      API --> RET[rag_service.retrieve]
+      RET --> EMB
+      RET --> VS
+      RET --> RR[rag_service reranker - IDF/BM25-style]
+      RR --> ANS[rag_service.answer_question - qwen2.5:3b]
+      ANS --> VER[rag_service.verify]
+      VER --> CITE[rag_service.build_sources]
       CITE --> API
     end
 
-    API --> FE
     OLL[(Ollama runtime)] -.-> EMB
-    OLL -.-> AS
+    OLL -.-> ANS
 ```
 
 ---
@@ -139,8 +138,8 @@ flowchart TD
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| Frontend | React + Vite | Upload UI, chat, citations, reports |
-| Backend | FastAPI + Uvicorn | REST API and background processing |
+| Frontend | Vanilla HTML + CSS + JavaScript | Upload UI, chat, citations (served by the backend) |
+| Backend | FastAPI + Uvicorn | REST API, static UI hosting, background processing |
 | PDF text | PyMuPDF (fitz) | Native text and page extraction |
 | OCR | Tesseract (pytesseract) | Text from images and scanned pages |
 | Tables | pdfplumber | Simple table extraction |
@@ -208,73 +207,6 @@ detect objects or perform real-time vision understanding.
 
 ---
 
-## Evaluation Dataset
-
-A lightweight evaluation set lives in `evaluation/`:
-
-```
-evaluation/
-├── documents/          sample_report.pdf, sample_invoice.png, product_catalog.pdf,
-│                       maintenance_manual.pdf  (synthetic fixtures)
-├── make_documents.py   regenerates maintenance_manual.pdf
-├── questions.json      32 labelled questions
-├── evaluate.py         runs the real pipeline and scores it
-└── results/            timestamped <run>-<mode>/ folders (generated, not checked in)
-```
-
-The 32 questions cover: direct factual, table-based, OCR/image text, multi-page,
-multi-document isolation, citation/page verification, and **unanswerable**
-questions (`answerable: false`) that must be refused — 10 of them, including 6
-**near-misses** that name a real fact from the wrong document or the wrong year,
-so a system that merely pattern-matches gets caught. Each question records
-`question`, `expected_answer`, `expected_page`, `answerable` and `document`;
-answerable questions also carry a `source_quote` taken verbatim from the document
-so the ground truth is auditable. All fixtures are synthetic (a made-up company
-and a reserved `.example` address) — no real personal or medical data.
-
----
-
-## Evaluation Metrics
-
-`evaluate.py` runs the actual pipeline (embed → retrieve → rerank → answer →
-verify → cite) against an **isolated data store** (`evaluation/.evaldata`, never
-the app's real index) and reports:
-
-- **Retrieval Recall@K** — fraction of answerable, page-labelled questions whose
-  expected page appears in the top-K retrieved set.
-- **Answer accuracy** — keyword/number overlap between the model answer and the
-  expected answer (all expected numbers must be reproduced).
-- **Citation / page accuracy** — fraction of answerable questions whose returned
-  sources cite the expected document page.
-- **Refusal accuracy** — fraction of unanswerable questions correctly refused.
-- **False-refusal rate** — fraction of answerable questions the system wrongly
-  refused (should stay near zero).
-- **Overall summary** plus a per-category breakdown.
-
-Each run writes to its own timestamped folder
-`evaluation/results/<YYYYmmdd-HHMMSS>-<mode>/` containing `evaluation_results.csv`
-(per question), `evaluation_results.json` (per question + summary) and
-`summary.txt` (human-readable metrics). Runs never overwrite one another, and
-results are **not** checked in — regenerate them locally for the models installed
-on your machine. The JSON summary records the exact `chat_model` and
-`embedding_model` used, so every number is traceable to a real run.
-
-Two modes are available: the default **scoped** run (each question searches only
-its own document, testing document isolation) and **`--unscoped`** (every question
-searches all indexed documents, testing cross-document retrieval):
-
-```bash
-backend/.venv/Scripts/python.exe evaluation/evaluate.py             # scoped
-backend/.venv/Scripts/python.exe evaluation/evaluate.py --unscoped  # all documents
-```
-
-Because the system uses a small local model and depends on OCR quality, the scores
-are a **realistic snapshot on a tiny sample corpus**, not a guaranteed benchmark —
-a perfect score here reflects the small, easy 4-document set, not general
-capability, and results will vary with a larger or harder corpus.
-
----
-
 ## Hallucination Prevention & Refusal Mechanism
 
 Multiple layers reduce hallucination:
@@ -323,7 +255,6 @@ These mechanisms **reduce** hallucination; they do not claim to eliminate it.
 - Support more document types (DOCX, multi-column layouts) and better table
   parsing.
 - Optional larger local model toggle for higher-quality answers.
-- A bigger, human-verified evaluation corpus and automated regression tracking.
 
 ---
 
@@ -332,7 +263,6 @@ These mechanisms **reduce** hallucination; they do not claim to eliminate it.
 ### Requirements
 
 - Python 3.11+
-- Node.js 20+
 - Ollama running locally
 - Models: `qwen2.5:3b` and `nomic-embed-text:latest`
 - Tesseract OCR (for scanned documents):
@@ -347,7 +277,7 @@ ollama pull nomic-embed-text:latest
 ollama list             # verify both models are present
 ```
 
-### 2. Backend
+### 2. Backend (also serves the UI)
 
 ```bash
 cd backend
@@ -359,23 +289,26 @@ copy .env.example .env        # Windows (cp on macOS/Linux)
 uvicorn app.main:app --reload --port 8000
 ```
 
-API: http://127.0.0.1:8000 — docs: http://127.0.0.1:8000/docs
+App (UI): http://127.0.0.1:8000 — API docs: http://127.0.0.1:8000/docs
 
-### 3. Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-App: http://localhost:5173
+The frontend is plain HTML/CSS/JS under `backend/app/static/` and is served
+directly by FastAPI at `/`, so there is no separate frontend install or dev
+server.
 
 ### One-click start (Windows)
 
-Double-click `start.bat`. It starts Ollama only if it is not already running
-(Ollama normally runs as a background/tray app), then opens the backend and
-frontend in two terminals.
+Double-click `start.bat`. It checks that Ollama is running (Ollama normally runs
+as a background/tray app), then starts the backend, which serves both the API and
+the UI at http://127.0.0.1:8000.
+
+### Run with Docker
+
+```bash
+docker compose up --build
+```
+
+The single `backend` service serves the API and UI on http://localhost:8000 and
+reaches Ollama on the host via `http://host.docker.internal:11434`.
 
 ### Run the tests
 
@@ -385,16 +318,6 @@ cd backend
 pytest
 ```
 
-### Run the evaluation
-
-```bash
-# from the repository root, using the backend virtual environment:
-backend/.venv/Scripts/python.exe evaluation/evaluate.py     # Windows
-# backend/.venv/bin/python evaluation/evaluate.py           # macOS/Linux
-```
-
-Ollama must be running. Results are written to `evaluation/results/`.
-
 ---
 
 ## Project Structure
@@ -403,27 +326,22 @@ Ollama must be running. Results are written to `evaluation/results/`.
 doculens/
 ├── backend/
 │   ├── app/
-│   │   ├── api/            documents, chat, reports, health routers
-│   │   ├── core/           config-agnostic errors, logging, security helpers
-│   │   ├── models/         Pydantic schemas
-│   │   ├── services/       file, pdf, ocr, table, chunk, embedding,
-│   │   │                   vector_store, retrieval, answer, verification,
-│   │   │                   citation, report, ollama
-│   │   └── main.py         FastAPI app
-│   ├── tests/              pytest suite
+│   │   ├── static/           index.html, style.css, app.js (the UI, served at /)
+│   │   ├── data/             uploads/, processed/, indexes/ (local runtime data)
+│   │   ├── main.py           FastAPI app, error types, logging, static mount
+│   │   ├── config.py         settings (pydantic-settings, .env)
+│   │   ├── schemas.py        Pydantic request/response models
+│   │   ├── routes.py         /api health, documents and chat endpoints
+│   │   ├── rag_service.py    chunk, embed, retrieve, rerank, answer, verify, cite
+│   │   ├── pdf_service.py    upload/registry, PDF+image extraction, OCR, tables
+│   │   ├── ollama_service.py Ollama client (embeddings + generation)
+│   │   └── vector_store.py   FAISS index + JSON metadata sidecar
+│   ├── tests/                test_app.py (pytest suite)
 │   ├── requirements.txt
+│   ├── Dockerfile
 │   └── .env.example
-├── frontend/
-│   └── src/                React components, hooks, api client, styles
-├── evaluation/
-│   ├── documents/          sample corpus
-│   ├── questions.json      labelled questions
-│   ├── evaluate.py         evaluation harness
-│   └── results/            generated metrics (CSV/JSON)
-├── samples/                quick-test sample_report.pdf, sample_invoice.png
-├── docs/                   PRD, Architecture, Design, Rules, Phases, Memory
-│   └── archive/            PROJECT_WALKTHROUGH.md (long reference)
-├── start.bat               one-click launcher (Windows)
+├── docker-compose.yml        single backend service (API + UI on :8000)
+├── start.bat                 one-click launcher (Windows)
 └── README.md
 ```
 
