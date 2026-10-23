@@ -10,7 +10,7 @@ Phases 0–9 from Phases.md are done, including the coding-order phases 0–6 fr
 - Project structure, docs (PRD, Architecture, Rules, Phases, Design), README, .gitignore, docker-compose.yml.
 - FastAPI backend: health, upload with validation, PDF text extraction (PyMuPDF), OCR fallback (Tesseract), image OCR, table extraction (pdfplumber), chunking with metadata, Ollama embeddings (/api/embed, nomic-embed-text), FAISS index with persistence, retrieval with score threshold, grounded answers (/api/generate, qwen2.5:3b), evidence verification, refusal on insufficient evidence, page-level citations, summaries (short/detailed/key_points), PDF reports (ReportLab), document delete with index rebuild.
 - React + Vite frontend: app shell with Ollama health pill, drag-and-drop upload with progress, document cards with status badges, polling, chat window with example-question chips, evidence status badge, verification warnings, source cards with relevance, copy answer, report download, summary panel, delete confirmation, toasts, skeletons, responsive layout.
-- Tests: 30 pytest tests passing (health, file validation, PDF/OCR extraction, chunking, retrieval, verification, citations, response parsing).
+- Tests: 77 pytest tests passing — 61 backend (health, file validation, PDF/OCR extraction + OCR image preprocessing, chunking, retrieval, verification, citations, response parsing, exact-id report download, restart recovery, atomic index persist, Docker guard) and 16 offline evaluation-scoring tests (no Ollama needed).
 - Live verification: uploaded a generated PDF and an OCR invoice image; questions answered with correct page sources; unanswerable question refused with the exact refusal sentence; report PDF downloaded through the frontend proxy.
 
 ## Current Files
@@ -26,12 +26,12 @@ Phases 0–9 from Phases.md are done, including the coding-order phases 0–6 fr
 - sentence-transformers/scikit-learn intentionally NOT installed — embeddings come from Ollama, keeping the install light.
 - FAISS index stores embeddings in its JSON metadata sidecar so the index can be rebuilt after document deletion.
 - Chat answers use temperature 0 for determinism.
-- Verification flags numbers in answers that don't appear in retrieved evidence and downgrades "supported" to "partially_supported".
+- Verification checks that every number in a draft answer appears in the retrieved evidence; if a number is missing (or the answer is otherwise ungrounded) the draft is rejected and the exact refusal sentence is returned. Evidence status has only two values — "supported" and "not_found" (there is no "partially_supported").
 - Heading detection in chunking is strict (ALL-CAPS or Title Case only) with a whole-page fallback so no page content is ever dropped.
 
 ## Known Problems
 
-- OCR quality depends on scan resolution; small default-font images misread some characters (expected).
+- OCR quality depends on scan quality. A PIL+numpy preprocessing pipeline (grayscale → auto-invert → upscale → Otsu binarize → pad) rescues sepia/low-contrast/small scans, but cursive handwriting remains unreadable and such questions are refused rather than guessed.
 - Table extraction is basic (pdfplumber grid tables only).
 - Browser-based UI verification was structural (accessibility tree); a visual pass on an open browser is still worth doing.
 

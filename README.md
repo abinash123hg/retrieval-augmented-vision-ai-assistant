@@ -189,7 +189,15 @@ Retrieval-Augmented Generation combines a retriever with a generator:
 For images and scanned PDFs, "analytics" means **document understanding via
 OCR**, not object detection:
 
-1. Each image/scanned page is rendered and passed to **Tesseract OCR**.
+1. Each image/scanned page is preprocessed with a lightweight **PIL + numpy**
+   pipeline — grayscale → auto-invert (dark scans) → upscale (small scans toward
+   ~300 DPI) → Otsu binarize (crisp ink on white; rescues sepia/colour and
+   low-contrast pages) → pad — and only then passed to **Tesseract OCR**. No extra
+   models or dependencies are added. Preprocessing only improves the evidence
+   text; the grounding and numeric-verification gates below are unchanged, so it
+   cannot introduce an answer that was not in the source. Cursive handwriting
+   remains unreadable (Tesseract cannot parse it) and such questions are refused
+   rather than guessed.
 2. OCR output is treated as page text, flagged as OCR-derived, and flows through
    the same chunk → embed → retrieve → answer pipeline as native text.
 3. Answers that rely on OCR evidence are marked so the user knows the source was
@@ -209,7 +217,7 @@ evaluation/
 ├── documents/          sample_report.pdf, sample_invoice.png, product_catalog.pdf
 ├── questions.json      15 labelled questions
 ├── evaluate.py         runs the real pipeline and scores it
-└── results/            evaluation_results.csv / .json (generated)
+└── results/            timestamped <run>-<mode>/ folders (generated, not checked in)
 ```
 
 The 15 questions cover: direct factual, table-based, OCR/image text, multi-page,
@@ -232,17 +240,31 @@ the app's real index) and reports:
 - **Citation / page accuracy** — fraction of answerable questions whose returned
   sources cite the expected document page.
 - **Refusal accuracy** — fraction of unanswerable questions correctly refused.
+- **False-refusal rate** — fraction of answerable questions the system wrongly
+  refused (should stay near zero).
 - **Overall summary** plus a per-category breakdown.
 
-Results are written to `evaluation/results/evaluation_results.csv` (per
-question) and `evaluation_results.json` (per question + summary). The JSON
-summary records the exact `chat_model` and `embedding_model` used, so the
-checked-in numbers are traceable; re-run the script to regenerate them for the
-models installed on your machine. Because the system uses a small local model and
-depends on OCR quality, these numbers are a **realistic snapshot on a tiny sample
-corpus**, not a guaranteed benchmark — a perfect score here reflects the small,
-easy 3-document set, not general capability, and results will vary with a larger
-or harder corpus.
+Each run writes to its own timestamped folder
+`evaluation/results/<YYYYmmdd-HHMMSS>-<mode>/` containing `evaluation_results.csv`
+(per question), `evaluation_results.json` (per question + summary) and
+`summary.txt` (human-readable metrics). Runs never overwrite one another, and
+results are **not** checked in — regenerate them locally for the models installed
+on your machine. The JSON summary records the exact `chat_model` and
+`embedding_model` used, so every number is traceable to a real run.
+
+Two modes are available: the default **scoped** run (each question searches only
+its own document, testing document isolation) and **`--unscoped`** (every question
+searches all indexed documents, testing cross-document retrieval):
+
+```bash
+backend/.venv/Scripts/python.exe evaluation/evaluate.py             # scoped
+backend/.venv/Scripts/python.exe evaluation/evaluate.py --unscoped  # all documents
+```
+
+Because the system uses a small local model and depends on OCR quality, the scores
+are a **realistic snapshot on a tiny sample corpus**, not a guaranteed benchmark —
+a perfect score here reflects the small, easy 3-document set, not general
+capability, and results will vary with a larger or harder corpus.
 
 ---
 
