@@ -27,6 +27,8 @@ backend/app/data/reports/*
 
 # Evaluation runtime store (isolated index/uploads created by evaluate.py)
 evaluation/.evaldata/
+# Evaluation outputs (timestamped result folders; regenerate locally, not checked in)
+evaluation/results/
 
 # IDE / OS
 .vscode/
