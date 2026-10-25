@@ -197,10 +197,13 @@ OCR**, not object detection:
    cannot introduce an answer that was not in the source. Cursive handwriting
    remains unreadable (Tesseract cannot parse it) and such questions are refused
    rather than guessed.
-2. OCR output is treated as page text, flagged as OCR-derived, and flows through
-   the same chunk → embed → retrieve → answer pipeline as native text.
-3. Answers that rely on OCR evidence are marked so the user knows the source was
-   a scan (OCR can introduce character errors).
+2. OCR output is treated as page text, flagged internally as OCR-derived
+   (`ocr_used` per page), and flows through the same chunk → embed → retrieve →
+   answer pipeline as native text.
+3. OCR usage is tracked per document (`ocr_pages`, returned by the API), but
+   individual answer citations are **not** separately flagged as scan-derived, so
+   OCR text can still carry character errors that only the grounding and
+   numeric-verification gates catch.
 
 There is **no** CNN, YOLO, COCO, or ImageNet component; the system does not
 detect objects or perform real-time vision understanding.
@@ -248,8 +251,8 @@ These mechanisms **reduce** hallucination; they do not claim to eliminate it.
 
 ## Future Scope
 
-- Wire magic-byte/content-type validation into uploads (the helper was removed as
-  dead code; a real implementation can be added).
+- Add magic-byte/content-type sniffing to uploads (today they are validated only
+  by extension, size, and non-empty content in `pdf_service.save_upload`).
 - Add a cross-encoder or hybrid sparse+dense retriever for harder queries.
 - Extend verification beyond numbers to entities and dates.
 - Support more document types (DOCX, multi-column layouts) and better table
