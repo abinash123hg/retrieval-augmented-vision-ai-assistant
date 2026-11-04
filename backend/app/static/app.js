@@ -1,9 +1,4 @@
-/* ==========================================================================
-   DocuLens front-end — vanilla JS rewrite of the previous React app.
-   Same behaviour, same API calls, same look. No build step, no dependencies.
-   All dynamic text is HTML-escaped before insertion (the old JSX did this
-   automatically; here it is explicit).
-   ========================================================================== */
+
 (function () {
   'use strict';
 

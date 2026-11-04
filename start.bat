@@ -1,6 +1,6 @@
 @echo off
-REM DocuLens - start everything with one command.
-REM Double-click this file, or run "start.bat" in a VS Code terminal.
+REM 
+REM 
 
 cd /d "%~dp0"
 
@@ -14,10 +14,8 @@ if errorlevel 1 (
     echo       Ollama is already running in the background ^(system tray^).
     echo       No separate Ollama terminal is needed - that is expected.
 )
-
 echo [2/2] Starting DocuLens on http://127.0.0.1:8000 ...
 start "DocuLens" cmd /k "cd /d %~dp0backend && .venv\Scripts\activate && uvicorn app.main:app --reload --port 8000"
-
 echo.
 echo ============================================
 echo  DocuLens is starting in a new window:

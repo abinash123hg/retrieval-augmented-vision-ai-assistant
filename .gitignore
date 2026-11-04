@@ -18,6 +18,10 @@ backend/app/data/indexes/*
 !backend/app/data/processed/.gitkeep
 !backend/app/data/indexes/.gitkeep
 
+# Evaluation runtime store + generated results (never committed)
+evaluation/.evaldata/
+evaluation/results/
+
 # IDE / OS
 .vscode/
 .idea/

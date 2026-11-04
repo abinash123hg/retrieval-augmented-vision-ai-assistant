@@ -9,9 +9,7 @@ Mounted by main.py under the /api prefix, so the public URLs are unchanged:
   GET    /api/documents/{document_id}/summary
   POST   /api/chat
 """
-
 from fastapi import APIRouter, BackgroundTasks, File, UploadFile
-
 from . import ollama_service, pdf_service, rag_service, vector_store
 from .config import get_settings
 from .schemas import (
@@ -24,10 +22,7 @@ from .schemas import (
     SummaryResponse,
     UploadResponse,
 )
-
 router = APIRouter()
-
-
 @router.get("/health", response_model=HealthResponse, tags=["health"])
 def health() -> HealthResponse:
     settings = get_settings()
@@ -37,8 +32,6 @@ def health() -> HealthResponse:
         chat_model=settings.ollama_chat_model,
         embedding_model=settings.ollama_embed_model,
     )
-
-
 @router.post("/documents/upload", response_model=UploadResponse, tags=["documents"])
 async def upload_document(
     background_tasks: BackgroundTasks, file: UploadFile = File(...)
@@ -48,12 +41,9 @@ async def upload_document(
     background_tasks.add_task(pdf_service.process_document, document_id)
     return UploadResponse(document_id=document_id, file_name=file.filename or "unnamed", status="processing")
 
-
 @router.get("/documents", response_model=DocumentListResponse, tags=["documents"])
 def list_documents() -> DocumentListResponse:
     return DocumentListResponse(documents=pdf_service.list_documents())
-
-
 @router.get("/documents/{document_id}", response_model=DocumentOut, tags=["documents"])
 def get_document(document_id: str) -> DocumentOut:
     return pdf_service.get_document(document_id)
